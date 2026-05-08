@@ -372,43 +372,47 @@ function wireModuleEvents() {
 
 /**
  * Initialize all modules in proper order
+ *
+ * CRITICAL ordering rule: every event wiring (wireModuleEvents, LifecycleManager,
+ * WebSocketManager.on handlers) must run synchronously BEFORE any awaitable
+ * network call AND before WebSocketManager.connect(). Otherwise:
+ *   - A slow /api/health or /api/translations response can hang the await on
+ *     TranslationTracker.initialize() and leave the UI un-wired (translate
+ *     button disabled, no WS handlers, no lifecycle handlers).
+ *   - Or the socket connects during the await and emits "connect" before its
+ *     handler is registered, so the post-connect refresh (provider models,
+ *     file list, resumable jobs) is silently dropped — that's why the
+ *     "LLM: Checking..." indicator gets stuck (issue #155).
  */
 async function initializeModules() {
-
-    // 1. Core infrastructure
+    // 1. Synchronous state + UI/module init (no awaits).
     initializeState();
-    WebSocketManager.connect();
-
-    // 2. UI modules
     initializeThemeManager();
     SettingsManager.initialize();
     FormManager.initialize();
     StatusManager.initialize();
-    initializePreviewHeight(); // Load and apply preview height
-
-    // 3. Provider modules
+    initializePreviewHeight();
     ProviderManager.initialize();
     ModelDetector.initialize();
-
-    // 4. File management
     FileUpload.initialize();
     FileManager.initialize();
-
-    // 5. Translation modules
-    // IMPORTANT: await TranslationTracker.initialize() because it's now async
-    // It needs to check server session before restoring state
-    await TranslationTracker.initialize();
     ProgressManager.reset();
     ResumeManager.initialize();
-
-    // 6. TTS Manager
-    TTSManager.initialize();
-
-    // 7. Lifecycle management
     LifecycleManager.initialize();
 
-    // 8. Wire up events
+    // 2. Wire cross-module + WebSocket handlers BEFORE the socket connects.
     wireModuleEvents();
+
+    // 3. Now safe to open the WebSocket — the "connect" handler is registered.
+    WebSocketManager.connect();
+
+    // 4. Background-only inits. Do not await: a slow server must not freeze
+    //    the UI. TranslationTracker.initialize() is async and performs
+    //    network calls; failures are logged and the UI stays usable.
+    TTSManager.initialize();
+    TranslationTracker.initialize().catch((error) => {
+        console.error('TranslationTracker initialization failed:', error);
+    });
 }
 
 // ========================================
