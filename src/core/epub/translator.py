@@ -28,6 +28,7 @@ from .epub_translation_adapter import EpubTranslationAdapter
 from ..post_processor import clean_residual_tag_placeholders
 from ..context_optimizer import AdaptiveContextManager, INITIAL_CONTEXT_SIZE, CONTEXT_STEP, MAX_CONTEXT_SIZE
 from .rtl_support import apply_rtl_to_epub_directory, is_rtl_language
+from .lang_support import apply_target_language_to_xhtml_directory
 
 
 async def translate_epub_file(
@@ -217,18 +218,25 @@ async def translate_epub_file(
                     log_callback("epub_rtl_start", f"🔄 Resetting to LTR layout (translating from {source_language})...")
             
             rtl_result = apply_rtl_to_epub_directory(temp_dir, target_language, source_language)
-            
+
             if log_callback:
                 if rtl_result.get('was_transition'):
                     # RTL -> LTR transition
-                    log_callback("epub_ltr_applied", 
+                    log_callback("epub_ltr_applied",
                                f"✅ LTR reset applied: {rtl_result['css_removed']} files cleaned, "
                                f"text direction set to left-to-right")
                 elif rtl_result['is_rtl']:
                     # Applied RTL styles
-                    log_callback("epub_rtl_applied", 
+                    log_callback("epub_rtl_applied",
                                f"✅ RTL support applied: {rtl_result['css_injected']} files updated, "
                                f"OPF progression: {'RTL' if rtl_result['opf_updated'] else 'unchanged'}")
+
+            # 6.5. Update <html lang="..."> on every XHTML to the target language
+            # so that e-readers apply the correct hyphenation, dictionary and TTS.
+            # Runs after RTL apply so it is the final authority on lang attributes.
+            apply_target_language_to_xhtml_directory(
+                temp_dir, target_language, log_callback=log_callback
+            )
 
             # 7. Repackage EPUB
             _repackage_epub(
