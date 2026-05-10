@@ -9,14 +9,125 @@ see [CONTRIBUTING_BENCHMARK.md](CONTRIBUTING_BENCHMARK.md) instead.
 
 ---
 
-## Quick prompt to start a future Claude Code session
+## Claude Code skills (local slash commands)
 
-> "Evaluate benchmark run `<RUN_ID>` for model `<MODEL_ID>`. Apply
-> [docs/JUDGE_RUBRIC.md](JUDGE_RUBRIC.md) strictly and follow the procedure in
-> [docs/BENCHMARK_WORKFLOW.md](BENCHMARK_WORKFLOW.md)."
+Three skills automate the full workflow when driven from Claude Code. Each is
+a Markdown file under `.claude/commands/` (gitignored — local to each
+maintainer's machine). Once present, they appear as `/`-prefixed commands in
+the Claude Code UI.
 
-That single sentence should let any new Claude session pick up exactly where
-the previous one left off — both files are self-contained and auto-loadable.
+### `/benchmark-test-model <provider> <model-id>`
+
+Run the entire flow for one model end-to-end:
+
+1. Pre-validates the model id against the provider's `/models` API (catches
+   typos and unpulled Ollama models before wasting a 7-minute translation
+   pass).
+2. Produces translations on the 8 canonical pairs (`--no-evaluate`).
+3. Dumps the evaluation brief and reads it.
+4. Scores every translation per [JUDGE_RUBRIC.md](JUDGE_RUBRIC.md): start at
+   10, deduct per the penalty table, respect §4 hard ceilings.
+5. Writes `plan/eval_<RUN_ID>_rubric_v1.json`.
+6. Applies the scores via `apply_evaluations.py` with the right judge_id.
+7. Reports per-pair averages, top/bottom 3, and a copy-pasteable `submit`
+   command.
+
+Examples:
+
+```text
+/benchmark-test-model poe gemini-3-flash-preview
+/benchmark-test-model ollama gemma3:27b
+/benchmark-test-model openrouter anthropic/claude-haiku-4-5
+```
+
+If args are missing, the skill asks for them via `AskUserQuestion`.
+
+The skill stops before the actual `submit` step. The maintainer reviews the
+report and runs `submit` manually once happy.
+
+### `/benchmark-rescore-submission <submission-path>`
+
+Re-evaluate an existing submission with the **current** Claude version as a
+fresh judge — without re-translating. Useful when a stronger model becomes
+available and you want to refresh historical scores.
+
+Reads `benchmark/data/submissions/<file>.json`, reconstructs a runnable JSON
+via `submission_to_run.py` (translations preserved, `scores: null`), then
+runs the same dump → score → apply pipeline as `benchmark-test-model`.
+Outputs a side-by-side comparison report (old judge avg vs new judge avg,
+biggest deltas).
+
+Example:
+
+```text
+/benchmark-rescore-submission benchmark/data/submissions/2026-05-09_hydropix_gemma3-27b.json
+```
+
+The skill stops before submitting the new observation; the maintainer
+decides whether to publish it as a second `n_obs` on the wiki or discard.
+
+### `/benchmark-publish-wiki`
+
+Regenerate and push the wiki from whatever's currently in
+`benchmark/data/submissions/`. No args.
+
+Use this when:
+
+- The auto `publish-wiki.yml` workflow can't push (typically because
+  `WIKI_PUSH_TOKEN` isn't configured in the repo secrets).
+- You want to publish immediately rather than waiting for the workflow.
+- You want to verify the v2 wiki layout locally before pushing.
+
+Idempotent: if no submission has changed since the last publish, the skill
+detects "no changes" and exits cleanly without committing.
+
+The skill always preserves `Archive-*` pages from the v1 archive — its
+cleanup globs explicitly exclude them.
+
+---
+
+## Typical maintainer session
+
+After producing a few benchmark runs, the workflow is:
+
+```text
+# 1. Test each new model — one slash command per model
+/benchmark-test-model poe gpt-5-mini
+[review report]
+
+/benchmark-test-model poe mistral-medium-3.1
+[review report]
+
+# 2. Submit each evaluated run (the skill suggests the exact command)
+python -m benchmark.cli submit benchmark_results/<RUN_ID_1>.json --by github:<user> --provider poe --judge-id claude-opus-4-7-rubric-v1
+python -m benchmark.cli submit benchmark_results/<RUN_ID_2>.json --by github:<user> --provider poe --judge-id claude-opus-4-7-rubric-v1
+
+# 3. Commit + push the new submissions
+git add benchmark/data/submissions/
+git commit -m "submit(benchmark): gpt-5-mini, mistral-medium-3.1"
+git push origin main
+
+# 4. Republish the wiki (only needed until WIKI_PUSH_TOKEN is configured)
+/benchmark-publish-wiki
+```
+
+Once `WIKI_PUSH_TOKEN` is set in the repo secrets, step 4 disappears — the
+auto workflow takes over.
+
+---
+
+## Sharing the skills with other contributors
+
+`.claude/commands/*.md` is gitignored by default. To share, add a per-file
+exception:
+
+```gitignore
+.claude/
+!.claude/commands/benchmark-*.md
+```
+
+Then `git add .claude/commands/benchmark-test-model.md ...` and commit. Other
+contributors who pull and use Claude Code will see the same slash commands.
 
 ---
 
