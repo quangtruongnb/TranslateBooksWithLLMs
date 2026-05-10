@@ -160,7 +160,7 @@
         "accuracy": 8.0,
         "fluency": 9.0,
         "style": 8.0,
-        "overall": 7.3,
+        "overall": 7.2,
         "feedback": "Slight semantic drift on 'deliberately' (→ '有目的'), 'what was not life' (→ '虚伪的生活'), 'practise resignation' (→ '轻易放弃'). Reflective tone preserved. (-1.5 accuracy aggregate)"
       }
     },
@@ -265,7 +265,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.4,
+        "overall": 7.2,
         "feedback": "Preserves Austen's 'Es una verdad universalmente reconocida' framing (canonical Spanish opener); ironic register intact. The strongest Pride and Prejudice rendering of the four."
       }
     },
@@ -370,7 +370,7 @@
         "accuracy": 8.7,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.4,
+        "overall": 7.2,
         "feedback": "Elegant French; 'le concours des événements' is felicitous. 'Le véritable guide' is a slight gloss for 'the absolutely trustworthy'. (-0.3 accuracy)"
       }
     },
@@ -400,7 +400,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.8,
+        "overall": 7.7,
         "feedback": "Period-appropriate scientific French ('Cet Abrégé', 'sera forcément imparfait'); Darwin's hedging fully preserved."
       }
     },
@@ -415,7 +415,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 7.0,
-        "overall": 7.5,
+        "overall": 7.4,
         "feedback": "'Généralement admis' is significantly weaker than 'universally acknowledged'; loses Austen's mock-universal framing that drives the chapter. (-1.0 style)"
       }
     },
@@ -430,7 +430,7 @@
         "accuracy": 8.5,
         "fluency": 7.5,
         "style": 8.0,
-        "overall": 6.8,
+        "overall": 6.7,
         "feedback": "Period-appropriate French dialogue, but contains a broken sentence: 'La question est maintenant de savoir en est-on à l'hémoglobine'. (-1.5 fluency grammar)"
       }
     },
@@ -640,7 +640,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.5,
+        "overall": 7.4,
         "feedback": "Strong literary rendering: correctly preserves 'Sensei' as romanized cultural term; handles 頭文字 properly as 'initials'. Reads as natural English literary prose."
       }
     },

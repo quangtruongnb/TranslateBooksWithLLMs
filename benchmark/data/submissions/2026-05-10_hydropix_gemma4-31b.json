@@ -40,7 +40,7 @@
         "accuracy": 8.0,
         "fluency": 9.0,
         "style": 8.0,
-        "overall": 7.0,
+        "overall": 6.9,
         "feedback": "Wilde botanical lexicon mishandled: 'pink-flowering thorn' → 山荆棘 (invented compound, should be 山楂), 'Persian saddle-bags' → 马鞍垫 (saddle-pad, not bags) (-0.5 each acc); 金雨花 for laburnum is a calque of 'golden rain' rather than the standard 金链花 (-0.3 acc)."
       }
     },
@@ -55,7 +55,7 @@
         "accuracy": 8.5,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.8,
+        "overall": 7.7,
         "feedback": "Clean technical Chinese for relativity passage; minor tense/aspect drift on 'developed in Section VII' rendered as 将...阐述 (future) instead of past (-0.5 acc), but logical structure intact."
       }
     },
@@ -85,7 +85,7 @@
         "accuracy": 8.5,
         "fluency": 9.0,
         "style": 7.5,
-        "overall": 7.4,
+        "overall": 7.3,
         "feedback": "'Regulating the circulation' translated metaphorically as 调理心境 loses Melville's literal/medical layer (-0.5 acc); 'grim about the mouth' flattened to 心情阴郁, dropping the embodied image (-0.5 style); 'drizzly' subsumed into 阴冷潮湿 (-0.3 style)."
       }
     },
@@ -100,7 +100,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 8.2,
+        "overall": 8.0,
         "feedback": "Faithful 19th-c. scientific register; Darwin's hedging ('I hope', 'No doubt', 'I must trust') preserved through 希望/无疑 patterns. No notable errors."
       }
     },
@@ -145,7 +145,7 @@
         "accuracy": 8.5,
         "fluency": 8.5,
         "style": 8.0,
-        "overall": 8.0,
+        "overall": 7.9,
         "feedback": "Twain's irony preserved; minor typo '一古画' missing 幅 (-0.3 fluency); 'glory to think' softened to 欣喜地认为 (-0.3 style). Closing punchline lands."
       }
     },
@@ -175,7 +175,7 @@
         "accuracy": 9.0,
         "fluency": 7.5,
         "style": 8.0,
-        "overall": 7.0,
+        "overall": 6.9,
         "feedback": "Two non-standard reflexive verb forms: 'abúsate' (should be 'abusa de ti') and 'ménospreciate' with mis-accent (should be 'menospréciate') (-1.0 fluency total); meaning preserved and Stoic register adequate."
       }
     },
@@ -235,7 +235,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.7,
+        "overall": 7.6,
         "feedback": "'Llámenme Ismael' is the canonical opening; 'regular la circulación' preserves Melville's medical register literally; 'mi semblante se vuelve sombrío' for 'grim about the mouth' loses the mouth specificity (-0.3 style)."
       }
     },
@@ -280,7 +280,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.7,
+        "overall": 7.6,
         "feedback": "Dialogue flows naturally; 'percibo' for 'I perceive' is literal but functional (-0.3 style for slightly stiff Sherlock voice); 'medico-legal' technical term accurate."
       }
     },
@@ -325,7 +325,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 8.1,
+        "overall": 7.9,
         "feedback": "Strong French Stoic register: 'Fais-le, ô mon âme', 'méprise-toi', 'le temps où tu pourras t'estimer sera révolu'; 'sans fin' is a slight addition but rhythmically apt."
       }
     },
@@ -400,7 +400,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 8.2,
+        "overall": 8.0,
         "feedback": "Period-appropriate French scientific prose; 'résumé' for Darwin's 'Abstract' conventional; epistemic verbs ('je dois m'en remettre', 'sans doute', 'j'espère') preserve the cautious authorial stance."
       }
     },
@@ -415,7 +415,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.9,
+        "overall": 7.7,
         "feedback": "Matches the canonical French Austen opening; 'aussi peu connus que puissent être les sentiments' is a strong concessive construction; closing 'propriété légitime' preserves the property-conceit irony."
       }
     },
@@ -445,7 +445,7 @@
         "accuracy": 8.5,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.8,
+        "overall": 7.7,
         "feedback": "'Glory to think' rendered as 'm'égare en pensant' (lose myself thinking) is a sense-shift from exaltation to wandering thought (-0.5 acc); 'a douché mon enthousiasme' is a strong French metaphor for crushing enthusiasm."
       }
     },
@@ -460,7 +460,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 8.2,
+        "overall": 8.0,
         "feedback": "'Vivre délibérément' is precise; 'm'exercer à la résignation' captures the philosophical practice sense well; 'extraire toute la moelle' is the canonical French Walden image."
       }
     },
@@ -490,7 +490,7 @@
         "accuracy": 7.5,
         "fluency": 9.0,
         "style": 7.5,
-        "overall": 6.5,
+        "overall": 6.4,
         "feedback": "Multiple botanical/material errors in a Wilde passage where imagery is the point: 'pink-flowering thorn' → 'gai hoa hồng' (rose thorn) (-0.5 acc); 'Persian saddle-bags' → 'vải dệt kiểu Ba Tư' (Persian-style fabric) (-1.0 acc); 'laburnum' → 'cây phi yến' (delphinium/larkspur, wrong species) (-1.0 acc, -0.5 style)."
       }
     },
@@ -520,7 +520,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 8.1,
+        "overall": 7.9,
         "feedback": "Iron-string metaphor preserved ('sợi dây sắt'); 'thiên mệnh' for 'divine providence' is a culturally apt Confucian/Buddhist resonance; 'phó thác bản thân một cách hồn nhiên' captures the childlike trust nicely."
       }
     },
@@ -550,7 +550,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.9,
+        "overall": 7.8,
         "feedback": "Faithful Vietnamese scientific prose; Darwin's hedging ('chắc chắn', 'tôi hy vọng', 'không tránh khỏi') preserved; 'nguồn tài liệu uy tín' is the right register for 'good authorities'."
       }
     },
@@ -595,7 +595,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.7,
+        "overall": 7.6,
         "feedback": "Twain's ironic deflation preserved; 'minh chứng không thể sai lệch' is the right register for 'infallible proof'; closing 'đó chỉ là đồ thời Phục hưng thôi' captures the dismissive tone with the colloquial 'đồ'."
       }
     },
@@ -610,7 +610,7 @@
         "accuracy": 8.5,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 8.1,
+        "overall": 7.9,
         "feedback": "'Cuộc đời tỉnh thức' for 'live deliberately' has Buddhist resonance Thoreau would not disown; 'bàng hoàng nhận ra' (stunned to realize) intensifies neutral 'discover' (-0.3 acc); 'tận hưởng đến giọt cuối cùng tinh túy' sweetens 'suck out all the marrow' (-0.3 style)."
       }
     },
@@ -625,7 +625,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.9,
+        "overall": 7.7,
         "feedback": "Sōseki's calm reflective voice preserved; 'not so much out of a desire to avoid public scrutiny as it is because it feels more natural' captures 世間を憚る 遠慮 with literary register; 'something as distant as initials' for よそよそしい頭文字 idiomatic."
       }
     },
@@ -670,7 +670,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.9,
+        "overall": 7.8,
         "feedback": "Lu Xun's introspective register preserved; 'pale, sallow sky' captures 苍黄 with appropriate doubling; '阿!' rendered as 'Ah!' keeps the emotional break; 'merely a reflection of my own state of mind' is a clean rendering of 这只是我自己心情的改变罢了."
       }
     },
@@ -685,7 +685,7 @@
         "accuracy": 9.0,
         "fluency": 9.0,
         "style": 8.5,
-        "overall": 7.9,
+        "overall": 7.8,
         "feedback": "Faithful Chinese rendering of Sōseki; '与其说...不如说' captures 世間を憚る 遠慮 elegantly; '即便在动笔写作时，心情也是一样' preserves the writerly reflection of 筆を執っても心持は同じ事である."
       }
     },
