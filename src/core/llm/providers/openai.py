@@ -132,12 +132,18 @@ class OpenAICompatibleProvider(LLMProvider):
                 usage = response_json.get("usage", {})
                 prompt_tokens = usage.get("prompt_tokens", 0)
                 completion_tokens = usage.get("completion_tokens", 0)
+                context_used = prompt_tokens + completion_tokens
+
+                if self.log_callback and (prompt_tokens or completion_tokens):
+                    self.log_callback("token_usage",
+                        f"Tokens: prompt={prompt_tokens}, response={completion_tokens}, "
+                        f"total={context_used}")
 
                 return LLMResponse(
                     content=response_text,
                     prompt_tokens=prompt_tokens,
                     completion_tokens=completion_tokens,
-                    context_used=prompt_tokens + completion_tokens,
+                    context_used=context_used,
                     context_limit=self.context_window,
                     was_truncated=False  # OpenAI API doesn't provide truncation info
                 )
