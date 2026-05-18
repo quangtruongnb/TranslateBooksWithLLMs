@@ -533,21 +533,25 @@ def create_config_blueprint(server_session_id=None):
             })
 
     def _get_openai_models(provided_api_key=None, api_endpoint=None):
-        """Get available models from OpenAI-compatible API
+        """Get available models from OpenAI-compatible API.
 
-        Always tries to fetch models dynamically from any OpenAI-compatible endpoint.
-        Falls back to static list if dynamic fetch fails.
+        - For api.openai.com: fall back to a static OpenAI cloud list if the live
+          fetch fails (keyless/offline scenarios).
+        - For any other endpoint (llama.cpp, LM Studio, vLLM, etc.): never fall
+          back to the OpenAI cloud list — selecting a non-existent model name
+          would cause HTTP 400 at translation time. Return an explicit error so
+          the UI can surface it.
         """
         api_key = _first_key(_resolve_api_key(provided_api_key, 'OPENAI_API_KEY', _config.OPENAI_API_KEY))
 
-        # Determine base URL from endpoint
         if api_endpoint:
-            # Extract base URL (remove /chat/completions if present)
             base_url = api_endpoint.replace('/chat/completions', '').rstrip('/')
         else:
             base_url = 'https://api.openai.com/v1'
 
-        # Static list of OpenAI models (fallback)
+        parsed_base = urlparse(base_url)
+        is_official_openai = parsed_base.hostname == 'api.openai.com'
+
         openai_static_models = [
             {'id': 'gpt-4o', 'name': 'GPT-4o (Latest)'},
             {'id': 'gpt-4o-mini', 'name': 'GPT-4o Mini'},
@@ -556,6 +560,7 @@ def create_config_blueprint(server_session_id=None):
             {'id': 'gpt-3.5-turbo', 'name': 'GPT-3.5 Turbo'}
         ]
 
+        fetch_error = None
         try:
             models_url = f"{base_url}/models"
             headers = {}
@@ -569,11 +574,9 @@ def create_config_blueprint(server_session_id=None):
                 models_data = data.get('data', [])
 
                 if models_data:
-                    # Filter and format models
                     models = []
                     for m in models_data:
                         model_id = m.get('id', '')
-                        # Skip embedding models and other non-chat models
                         if 'embedding' in model_id.lower() or 'whisper' in model_id.lower():
                             continue
                         models.append({
@@ -582,7 +585,6 @@ def create_config_blueprint(server_session_id=None):
                             'owned_by': m.get('owned_by', 'unknown')
                         })
 
-                    # Sort models by name
                     models.sort(key=lambda x: x['name'].lower())
 
                     if models:
@@ -600,13 +602,35 @@ def create_config_blueprint(server_session_id=None):
                             "count": len(models)
                         })
 
+                fetch_error = "Endpoint returned no models (HTTP 200, empty data)"
+            else:
+                fetch_error = f"HTTP {response.status_code} from {models_url}"
+                if response.text:
+                    fetch_error += f": {response.text[:200]}"
+
+        except requests.exceptions.SSLError as e:
+            fetch_error = f"SSL error ({e}). If this is a local server, use http:// instead of https://"
+            logger.warning(f"OpenAI-compatible models fetch SSL error at {base_url}: {e}")
         except requests.exceptions.ConnectionError as e:
-            pass
-
+            fetch_error = f"Could not connect to {base_url} ({e})"
+            logger.warning(f"OpenAI-compatible models fetch connection error at {base_url}: {e}")
         except Exception as e:
-            pass
+            fetch_error = f"{type(e).__name__}: {e}"
+            logger.warning(f"OpenAI-compatible models fetch failed at {base_url}: {e}")
 
-        # Fallback: return static OpenAI models
+        # Custom endpoints get an error rather than the cloud list, because
+        # picking a gpt-4o id and sending it to llama.cpp would 400 at trad time.
+        if not is_official_openai:
+            return jsonify({
+                "models": [],
+                "model_names": [],
+                "default": None,
+                "status": "openai_error",
+                "count": 0,
+                "endpoint": base_url,
+                "error": fetch_error or f"Could not list models at {base_url}/models"
+            })
+
         model_ids = [m['id'] for m in openai_static_models]
         if _config.DEFAULT_MODEL and _config.DEFAULT_MODEL in model_ids:
             fallback_default = _config.DEFAULT_MODEL
@@ -617,7 +641,8 @@ def create_config_blueprint(server_session_id=None):
             "model_names": model_ids,
             "default": fallback_default,
             "status": "openai_static",
-            "count": len(openai_static_models)
+            "count": len(openai_static_models),
+            "error": fetch_error
         })
 
     def _get_gemini_models(provided_api_key=None):
