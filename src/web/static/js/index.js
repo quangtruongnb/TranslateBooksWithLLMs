@@ -401,8 +401,11 @@ async function initializeModules() {
     initializePreviewHeight();
     ProviderManager.initialize();
     ModelDetector.initialize();
-    CostEstimator.initialize();
+    // FileUpload must initialize before CostEstimator so its `change` listeners
+    // on source/target language fire first and recreate the file <li>s (with
+    // empty cost-badge slots) before CostEstimator's listener queries the DOM.
     FileUpload.initialize();
+    CostEstimator.initialize();
     FileManager.initialize();
     ProgressManager.reset();
     ResumeManager.initialize();

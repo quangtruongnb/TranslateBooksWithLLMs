@@ -1643,8 +1643,9 @@ input[type="range"]::-moz-range-thumb {
 
 .file-item {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
     padding: 12px;
     margin-bottom: 8px;
     background: var(--background-light);
@@ -1653,6 +1654,17 @@ input[type="range"]::-moz-range-thumb {
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+}
+
+.file-item-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.file-cost-badge {
+    margin-top: 0;
+    margin-left: 36px;
 }
 
 /* Clickable file items (Queued status) */

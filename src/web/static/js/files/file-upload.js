@@ -849,6 +849,11 @@ export const FileUpload = {
                     };
                 }
 
+                // Header row groups icon, info, and remove button so the cost
+                // badge (added below) can sit on its own line inside the li.
+                const header = document.createElement('div');
+                header.className = 'file-item-header';
+
                 // Icon/thumbnail container
                 const iconContainer = document.createElement('span');
                 iconContainer.className = 'file-icon';
@@ -871,7 +876,7 @@ export const FileUpload = {
                     iconContainer.innerHTML = this._getFileIcon(file.fileType);
                 }
 
-                li.appendChild(iconContainer);
+                header.appendChild(iconContainer);
 
                 // File info
                 const infoSpan = document.createElement('span');
@@ -905,7 +910,7 @@ export const FileUpload = {
                     infoSpan.appendChild(activeBadge);
                 }
 
-                li.appendChild(infoSpan);
+                header.appendChild(infoSpan);
 
                 // Remove button
                 const removeBtn = document.createElement('button');
@@ -916,7 +921,22 @@ export const FileUpload = {
                     e.stopPropagation();
                     this.removeFile(file.name);
                 };
-                li.appendChild(removeBtn);
+                header.appendChild(removeBtn);
+
+                li.appendChild(header);
+
+                // Cost badge slot — filled by CostEstimator. Identified by file
+                // path (or name as fallback) so the estimator can target it.
+                if (file.status === 'Queued') {
+                    const costBadge = document.createElement('div');
+                    costBadge.className = 'cost-badge file-cost-badge';
+                    costBadge.setAttribute(
+                        'data-cost-badge-for',
+                        file.filePath || file.name
+                    );
+                    costBadge.style.display = 'none';
+                    li.appendChild(costBadge);
+                }
 
                 fileListContainer.appendChild(li);
             });

@@ -610,10 +610,11 @@ export const ApiClient = {
         return await apiRequest('/api/pricing/defaults');
     },
 
-    async estimateCost(payload) {
+    async estimateCost(payload, { signal } = {}) {
         return await apiRequest('/api/cost/estimate', {
             method: 'POST',
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal,
         });
     }
 };

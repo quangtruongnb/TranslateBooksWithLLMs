@@ -1,7 +1,10 @@
 /**
  * Cost Estimator - estimate translation cost in USD before launching.
  *
- * Triggers on model change, file added/removed, and (debounced) text input.
+ * Renders a per-file cost badge inside each <li> of the Selected Files list
+ * (slot: <div class="cost-badge file-cost-badge" data-cost-badge-for="...">).
+ *
+ * Triggers on model change, file added/removed, and language/options changes.
  * Pricing for OpenRouter/Poe is read from the model option's pricing data
  * already returned by their APIs. For other paid providers, defaults come
  * from the backend; users can override per model via the Edit Prices modal
@@ -13,16 +16,40 @@ import { DomHelpers } from '../ui/dom-helpers.js';
 import { StateManager } from '../core/state-manager.js';
 
 const STORAGE_KEY = 'tbl_pricing_overrides_v1';
-const DEBOUNCE_MS = 800;
 
 const LOCAL_PROVIDERS = new Set(['ollama']);
 const API_PRICING_PROVIDERS = new Set(['openrouter', 'poe']);
 
 let pricingDefaults = null;
 let pricingLastUpdated = null;
-let debounceTimer = null;
-let inFlightController = null;
 let listenersAttached = false;
+
+// Per-badge AbortControllers so a fresh refresh cancels stale in-flight calls.
+const inFlightByBadge = new WeakMap();
+
+// Cache last estimate per (file, provider, model, langs, options). Keyed by a
+// string so it survives when updateFileDisplay rebuilds the badge element —
+// the next refresh restores the result without re-hitting the API.
+const estimateCache = new Map();
+
+function makeCacheKey(file, ctx) {
+    return [
+        ctx.provider,
+        ctx.model,
+        file.filePath,
+        ctx.src,
+        ctx.tgt,
+        ctx.options.refine ? 1 : 0,
+        ctx.options.text_cleanup ? 1 : 0,
+    ].join('|');
+}
+
+function invalidateCacheFor(provider, model) {
+    const prefix = `${provider}|${model}|`;
+    for (const key of estimateCache.keys()) {
+        if (key.startsWith(prefix)) estimateCache.delete(key);
+    }
+}
 
 function loadOverrides() {
     try {
@@ -69,18 +96,6 @@ function getCurrentProvider() {
 
 function getCurrentModel() {
     return DomHelpers.getValue('model');
-}
-
-function getInputText() {
-    const el = DomHelpers.getElement('inputText');
-    return el ? (el.value || '') : '';
-}
-
-function getCurrentFilePath() {
-    const files = StateManager.getState('files.toProcess') || [];
-    if (!Array.isArray(files) || files.length === 0) return null;
-    const first = files.find(f => f?.filePath) || files[0];
-    return first?.filePath || null;
 }
 
 function getLanguagePair() {
@@ -149,8 +164,16 @@ function formatUSD(amount) {
     return `$${amount.toFixed(2)}`;
 }
 
-function renderBadge(state) {
-    const badge = DomHelpers.getElement('costEstimateBadge');
+function sourceLabel(source, lastUpdated) {
+    switch (source) {
+        case 'user_override': return 'Your custom prices';
+        case 'provider_api':  return 'Live prices from provider API';
+        case 'default_table': return `Default prices (updated ${lastUpdated || pricingLastUpdated || ''})`;
+        default: return '';
+    }
+}
+
+function renderBadge(badge, state) {
     if (!badge) return;
 
     badge.classList.remove(
@@ -208,7 +231,7 @@ function renderBadge(state) {
         badge.classList.add('cost-unknown');
         badge.innerHTML = `
             <span class="cost-badge-icon material-symbols-outlined">description</span>
-            <span class="cost-badge-text">Add a file or text to estimate cost</span>
+            <span class="cost-badge-text">File not readable for estimation</span>
         `;
         badge.title = '';
         return;
@@ -245,15 +268,6 @@ function renderBadge(state) {
     badge.title = [tokensNote, sourceNote].filter(Boolean).join(' • ');
 }
 
-function sourceLabel(source, lastUpdated) {
-    switch (source) {
-        case 'user_override': return 'Your custom prices';
-        case 'provider_api':  return 'Live prices from provider API';
-        case 'default_table': return `Default prices (updated ${lastUpdated || pricingLastUpdated || ''})`;
-        default: return '';
-    }
-}
-
 async function ensureDefaults() {
     if (pricingDefaults) return;
     try {
@@ -263,6 +277,77 @@ async function ensureDefaults() {
     } catch {
         pricingDefaults = {};
     }
+}
+
+function findFileForBadge(badge, files) {
+    const key = badge.getAttribute('data-cost-badge-for');
+    if (!key) return null;
+    return files.find(f => f.filePath === key) || files.find(f => f.name === key) || null;
+}
+
+async function estimateOne(badge, file, ctx) {
+    const cacheKey = makeCacheKey(file, ctx);
+
+    // If we already estimated for these exact params, restore instantly.
+    const cached = estimateCache.get(cacheKey);
+    if (cached) {
+        renderBadge(badge, cached);
+        return;
+    }
+
+    const prev = inFlightByBadge.get(badge);
+    if (prev) prev.abort();
+
+    const controller = new AbortController();
+    inFlightByBadge.set(badge, controller);
+
+    renderBadge(badge, { kind: 'loading' });
+
+    const payload = {
+        provider: ctx.provider,
+        model: ctx.model,
+        src_lang: ctx.src,
+        tgt_lang: ctx.tgt,
+        options: ctx.options,
+        pricing: ctx.pricing,
+        file_path: file.filePath,
+    };
+
+    try {
+        const data = await ApiClient.estimateCost(payload, { signal: controller.signal });
+        let state;
+        if (data.free) {
+            state = { kind: 'free', message: data.message };
+        } else if (data.unknown) {
+            state = { kind: 'unknown', provider: ctx.provider, model: ctx.model };
+        } else if (data.no_content) {
+            state = { kind: 'no_content' };
+        } else {
+            state = { kind: 'estimated', ...data, pricing_source: ctx.source };
+        }
+        estimateCache.set(cacheKey, state);
+        renderBadge(badge, state);
+    } catch (error) {
+        if (error?.name === 'AbortError') return;
+        renderBadge(badge, { kind: 'error', message: error?.message });
+    } finally {
+        if (inFlightByBadge.get(badge) === controller) {
+            inFlightByBadge.delete(badge);
+        }
+    }
+}
+
+let refreshScheduled = false;
+function scheduleRefresh() {
+    if (refreshScheduled) return;
+    refreshScheduled = true;
+    // queueMicrotask coalesces multiple synchronous triggers (file upload may
+    // run updateFileDisplay several times in one tick — language auto-detect
+    // + notifyFileListChanged) so we re-estimate against the FINAL DOM.
+    queueMicrotask(() => {
+        refreshScheduled = false;
+        CostEstimator.refresh();
+    });
 }
 
 export const CostEstimator = {
@@ -275,104 +360,80 @@ export const CostEstimator = {
         if (listenersAttached) return;
         listenersAttached = true;
 
-        window.addEventListener('modelChanged', () => this.refresh());
-        window.addEventListener('fileListChanged', () => this.refresh());
-        window.addEventListener('translationOptionsChanged', () => this.refresh());
-
-        const inputText = DomHelpers.getElement('inputText');
-        if (inputText) {
-            inputText.addEventListener('input', () => this.refreshDebounced());
-        }
+        window.addEventListener('modelChanged', scheduleRefresh);
+        window.addEventListener('fileListChanged', scheduleRefresh);
+        window.addEventListener('translationOptionsChanged', scheduleRefresh);
 
         ['refineTranslation', 'textCleanup', 'sourceLang', 'targetLang'].forEach((id) => {
             const el = DomHelpers.getElement(id);
-            if (el) el.addEventListener('change', () => this.refresh());
+            if (el) el.addEventListener('change', scheduleRefresh);
         });
 
-        const badge = DomHelpers.getElement('costEstimateBadge');
-        if (badge) {
-            badge.addEventListener('click', (event) => {
-                const target = event.target.closest('[data-action="edit"]');
-                if (target) {
-                    event.preventDefault();
-                    this.openEditModal();
-                }
-            });
+        // Safety net: observe the file list for any <li> appearing or
+        // disappearing. updateFileDisplay rebuilds <li>s and the badge slots
+        // get recreated; the observer catches any case the event listeners
+        // miss. IMPORTANT: childList only (no subtree) — otherwise renderBadge
+        // mutating badge.innerHTML would re-trigger refresh, infinite loop.
+        const container = DomHelpers.getElement('fileListContainer');
+        if (container) {
+            const observer = new MutationObserver(scheduleRefresh);
+            observer.observe(container, { childList: true });
         }
+
+        // Delegate Edit-price button clicks for all per-file badges.
+        document.addEventListener('click', (event) => {
+            const editBtn = event.target.closest('.cost-badge [data-action="edit"]');
+            if (!editBtn) return;
+            event.preventDefault();
+            event.stopPropagation();
+            this.openEditModal();
+        });
     },
 
-    refreshDebounced() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => this.refresh(), DEBOUNCE_MS);
-    },
+    refresh() {
+        const badges = document.querySelectorAll('[data-cost-badge-for]');
+        if (badges.length === 0) return;
 
-    async refresh() {
         const provider = getCurrentProvider();
         const model = getCurrentModel();
 
         if (!provider || !model) {
-            renderBadge({ kind: 'hidden' });
+            badges.forEach(b => renderBadge(b, { kind: 'hidden' }));
             return;
         }
 
         if (LOCAL_PROVIDERS.has(provider)) {
-            renderBadge({ kind: 'free', message: 'Free (local model)' });
+            badges.forEach(b => renderBadge(b, { kind: 'free', message: 'Free (local model)' }));
             return;
         }
 
         const { pricing, source } = resolvePricing(provider, model);
         if (!pricing) {
-            renderBadge({ kind: 'unknown', provider, model });
+            badges.forEach(b => renderBadge(b, { kind: 'unknown', provider, model }));
             return;
         }
-
-        const text = getInputText();
-        const filePath = getCurrentFilePath();
-        if (!text.trim() && !filePath) {
-            renderBadge({ kind: 'no_content' });
-            return;
-        }
-
-        if (inFlightController) inFlightController.abort();
-        inFlightController = new AbortController();
-
-        renderBadge({ kind: 'loading' });
 
         const { src, tgt } = getLanguagePair();
-        const payload = {
+        const ctx = {
             provider,
             model,
-            src_lang: src,
-            tgt_lang: tgt,
-            options: getOptions(),
             pricing,
+            source,
+            src,
+            tgt,
+            options: getOptions(),
         };
-        if (text.trim()) payload.text = text;
-        else if (filePath) payload.file_path = filePath;
 
-        try {
-            const data = await ApiClient.estimateCost(payload);
-            if (data.free) {
-                renderBadge({ kind: 'free', message: data.message });
+        const files = StateManager.getState('files.toProcess') || [];
+
+        badges.forEach((badge) => {
+            const file = findFileForBadge(badge, files);
+            if (!file || !file.filePath) {
+                renderBadge(badge, { kind: 'no_content' });
                 return;
             }
-            if (data.unknown) {
-                renderBadge({ kind: 'unknown', provider, model });
-                return;
-            }
-            if (data.no_content) {
-                renderBadge({ kind: 'no_content' });
-                return;
-            }
-            renderBadge({
-                kind: 'estimated',
-                ...data,
-                pricing_source: source,
-            });
-        } catch (error) {
-            if (error?.name === 'AbortError') return;
-            renderBadge({ kind: 'error', message: error?.message });
-        }
+            estimateOne(badge, file, ctx);
+        });
     },
 
     openEditModal() {
@@ -452,11 +513,13 @@ export const CostEstimator = {
                     return;
                 }
                 setOverride(provider, model, { input: inputVal, output: outputVal });
+                invalidateCacheFor(provider, model);
                 close();
                 this.refresh();
             }
             if (action === 'reset') {
                 clearOverride(provider, model);
+                invalidateCacheFor(provider, model);
                 close();
                 this.refresh();
             }
