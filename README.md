@@ -8,22 +8,41 @@
 
 </div>
 
-Translate **books**, **subtitles**, and **documents** using AI - locally or in the cloud.
+A desktop app that translates **books**, **subtitles**, and **documents** with AI - local or cloud. Drop a file, pick a language, get the result.
 
-**No size limit.** Process documents of any length - from a single page to thousand-page novels. The intelligent chunking system handles unlimited content while preserving context between segments.
+**Formats:** EPUB, SRT, DOCX, TXT
 
-**Perfect preservation.** Your documents come out exactly as they went in: EPUB formatting, styles, and structure remain intact. SRT timecodes stay perfectly synchronized. Every tag, every timestamp, every formatting detail is preserved.
-
-**Resume anytime.** Interrupted translation? Pick up exactly where you left off. The checkpoint system saves progress automatically.
-
-Formats: **EPUB**, **SRT**, **DOCX**, **TXT**
+- **No size limit.** Process documents of any length - from a single page to thousand-page novels. The intelligent chunking system handles unlimited content while preserving context between segments.
+- **Perfect preservation.** Your documents come out exactly as they went in: EPUB formatting, styles, and structure remain intact. SRT timecodes stay perfectly synchronized. Every tag, every timestamp, every formatting detail is preserved.
+- **Resume anytime.** Interrupted translation? Pick up exactly where you left off. The checkpoint system saves progress automatically.
 
 [<img width="867" height="861" alt="image" src="https://github.com/user-attachments/assets/3efcb2a4-e1f0-4d18-ac90-1068a694a2da">](https://github.com/user-attachments/assets/3efcb2a4-e1f0-4d18-ac90-1068a694a2da)
 
+> **[Translation Quality Benchmarks](https://github.com/hydropix/TranslateBooksWithLLMs/wiki)** - Find the best model for your target language.
 
-Providers:
+---
 
-<p align="left">
+## Quick Start
+
+1. **Download** the release for your platform (buttons above), or grab it from the [releases page](https://github.com/hydropix/TranslateBooksWithLLMs/releases/latest).
+2. **Extract** the archive.
+3. **Run** `TranslateBook.exe` (Windows) or `./TranslateBook` (macOS).
+4. **Open** http://localhost:5000 in your browser.
+
+That's it. On first launch, you choose a translation provider:
+
+- **Free & local** - Install [Ollama](https://ollama.com/) and pull a model (e.g. `ollama pull qwen3:14b`). Nothing leaves your machine.
+- **Cloud (often free tier available)** - Paste an API key from one of the providers below.
+
+> **Note:** First run creates a `TranslateBook_Data` folder with your settings.
+>
+> **macOS:** On first launch, go to **System Settings > Privacy & Security** and click **Open Anyway**.
+
+---
+
+## Providers
+
+<p align="center">
 <a href="https://ollama.com/"><img src="src/web/static/img/providers/ollama.png" alt="Ollama" height="32"></a>&nbsp;&nbsp;
 <a href="https://poe.com/"><img src="src/web/static/img/providers/poe.png" alt="Poe" height="32"></a>&nbsp;&nbsp;
 <a href="https://openrouter.ai/"><img src="src/web/static/img/providers/openrouter.png" alt="OpenRouter" height="32"></a>&nbsp;&nbsp;
@@ -34,37 +53,37 @@ Providers:
 <a href="https://build.nvidia.com/"><img src="src/web/static/img/providers/nvidia.png" alt="NVIDIA NIM" height="32"></a>
 </p>
 
-- [**Ollama**](https://ollama.com/download) (local / cloud)
-- [**Poe**](https://poe.com/api_key) ⭐ Recommended - Easy setup, multiple AI models
-- [**OpenRouter**](https://openrouter.ai/keys) (200+ models)
-- [**OpenAI**](https://platform.openai.com/api-keys) (**compatible like LM Studio**)
-- [**Mistral**](https://console.mistral.ai/api-keys)
-- [**DeepSeek**](https://platform.deepseek.com/api_keys)
-- [**Gemini**](https://aistudio.google.com/apikey)
-- [**NVIDIA NIM**](https://build.nvidia.com/)
+| Provider | Type | Get started |
+|----------|------|-------------|
+| **Ollama** | Local | [ollama.com](https://ollama.com/) |
+| **Poe** ⭐ | Cloud (Recommended - easy setup, multiple models) | [poe.com/api_key](https://poe.com/api_key) |
+| **OpenAI-Compatible** | Local (llama.cpp, LM Studio, vLLM, LocalAI...) | Point to your server's endpoint |
+| **OpenRouter** | Cloud (200+ models) | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| **OpenAI** | Cloud | [platform.openai.com](https://platform.openai.com/api-keys) |
+| **Mistral** | Cloud | [console.mistral.ai](https://console.mistral.ai/api-keys) |
+| **DeepSeek** | Cloud | [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
+| **Gemini** | Cloud | [Google AI Studio](https://aistudio.google.com/apikey) |
+| **NVIDIA NIM** | Cloud | [build.nvidia.com](https://build.nvidia.com/) |
 
-> **[Translation Quality Benchmarks](https://github.com/hydropix/TranslateBooksWithLLMs/wiki)** — Find the best model for your target language.
-
----
-
-## Quick Start
-
-### Download Executable (No Python Required!)
-
-[Download the latest release](https://github.com/hydropix/TranslateBooksWithLLMs/releases/latest) for your platform.
-
-1. Download and extract the archive for your platform
-2. Install [Ollama](https://ollama.com/) (for local AI models)
-3. Run `TranslateBook.exe` (Windows) or `./TranslateBook` (macOS)
-4. Open http://localhost:5000 in your browser
-
-> **Note:** First run creates a `TranslateBook_Data` folder with configuration files.
->
-> **macOS:** On first launch, go to System Settings > Privacy & Security and click "Open Anyway".
+See [docs/PROVIDERS.md](docs/PROVIDERS.md) for detailed setup instructions.
 
 ---
 
-### For the Bearded Ones - Install from Source
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Ollama won't connect | Check Ollama is running, test `curl http://localhost:11434/api/tags` |
+| Model not found | Run `ollama list`, then `ollama pull model-name` |
+
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for more solutions.
+
+---
+
+## Advanced
+
+<details>
+<summary><b>Install from source</b></summary>
 
 **Prerequisites:** [Python 3.8+](https://www.python.org/downloads/), [Ollama](https://ollama.com/), [Git](https://git-scm.com/)
 
@@ -80,31 +99,12 @@ start.bat
 chmod +x start.sh && ./start.sh
 ```
 
-The web interface opens at **http://localhost:5000**
+The web interface opens at **http://localhost:5000**.
 
----
+</details>
 
-## LLM Providers
-
-| Provider | Type | Setup |
-|----------|------|-------|
-| **Ollama** | Local | [ollama.com](https://ollama.com/) |
-| **Poe** ⭐ | Cloud (Recommended) | [poe.com/api_key](https://poe.com/api_key) |
-| **OpenAI-Compatible** | Local | llama.cpp, LM Studio, vLLM, LocalAI... |
-| **OpenRouter** | Cloud (200+ models) | [openrouter.ai/keys](https://openrouter.ai/keys) |
-| **OpenAI** | Cloud | [platform.openai.com](https://platform.openai.com/api-keys) |
-| **Mistral** | Cloud | [console.mistral.ai](https://console.mistral.ai/api-keys) |
-| **DeepSeek** | Cloud | [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
-| **Gemini** | Cloud | [Google AI Studio](https://makersuite.google.com/app/apikey) |
-| **NVIDIA NIM** | Cloud | [build.nvidia.com](https://build.nvidia.com/) |
-
-> **OpenAI-Compatible servers:** Use `--provider openai` with your server's endpoint (e.g., llama.cpp: `http://localhost:8080/v1/chat/completions`, LM Studio: `http://localhost:1234/v1/chat/completions`)
-
-See [docs/PROVIDERS.md](docs/PROVIDERS.md) for detailed setup instructions.
-
----
-
-## Command Line
+<details>
+<summary><b>Command line</b></summary>
 
 ```bash
 # Basic (auto-generates "book (Chinese).epub")
@@ -143,7 +143,7 @@ python translate.py -i book.txt --provider openai \
     --api_endpoint http://localhost:8080/v1/chat/completions -m your-model -tl French
 ```
 
-### Main Options
+### Main options
 
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -159,9 +159,10 @@ python translate.py -i book.txt --provider openai \
 
 See [docs/CLI.md](docs/CLI.md) for all options (TTS voices, rates, formats, etc.).
 
----
+</details>
 
-## Configuration (.env)
+<details>
+<summary><b>Configuration (.env)</b></summary>
 
 Copy `.env.example` to `.env` and edit:
 
@@ -187,13 +188,14 @@ REQUEST_TIMEOUT=900
 MAX_TOKENS_PER_CHUNK=450  # Token-based chunking (default: 450 tokens)
 ```
 
-> **Multiple API keys?** Any `*_API_KEY` variable accepts a comma-separated list (e.g. `GEMINI_API_KEY=key1,key2,key3`). The system rotates between keys automatically when one hits a rate limit — useful to chain free-tier accounts. See [docs/API_KEY_ROTATION.md](docs/API_KEY_ROTATION.md).
->
-> **Long jobs?** Get a push notification on your phone (via ntfy), Discord, Slack, gotify, or any HTTP endpoint when a translation finishes. Set `NOTIFY_WEBHOOK_URL` in `.env`. See [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md).
+**Multiple API keys?** Any `*_API_KEY` variable accepts a comma-separated list (e.g. `GEMINI_API_KEY=key1,key2,key3`). The system rotates between keys automatically when one hits a rate limit - useful to chain free-tier accounts. See [docs/API_KEY_ROTATION.md](docs/API_KEY_ROTATION.md).
 
----
+**Long jobs?** Get a push notification on your phone (via ntfy), Discord, Slack, gotify, or any HTTP endpoint when a translation finishes. Set `NOTIFY_WEBHOOK_URL` in `.env`. See [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md).
 
-## Docker
+</details>
+
+<details>
+<summary><b>Docker</b></summary>
 
 ```bash
 docker build -t translatebook .
@@ -202,16 +204,7 @@ docker run -p 5000:5000 -v $(pwd)/translated_files:/app/translated_files transla
 
 See [DOCKER.md](DOCKER.md) for more options.
 
----
-
-## Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| Ollama won't connect | Check Ollama is running, test `curl http://localhost:11434/api/tags` |
-| Model not found | Run `ollama list`, then `ollama pull model-name` |
-
-See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for more solutions.
+</details>
 
 ---
 
