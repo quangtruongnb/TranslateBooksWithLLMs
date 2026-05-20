@@ -5,12 +5,12 @@ echo ============================================
 echo.
 
 REM Se placer dans le repertoire racine du projet
-cd /d "%~dp0\.."
+cd /d "%~dp0\..\.."
 
 echo Verification de la configuration sans execution...
 echo.
 
-python -m prompt_optimizer.optimize --config prompt_optimizer/prompt_optimizer_config.yaml --dry-run
+python -m tools.prompt_optimizer.optimize --config tools/prompt_optimizer/prompt_optimizer_config.yaml --dry-run
 
 echo.
 if errorlevel 1 (

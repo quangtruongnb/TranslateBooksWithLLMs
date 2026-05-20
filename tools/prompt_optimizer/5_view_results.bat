@@ -5,7 +5,7 @@ echo ============================================
 echo.
 
 REM Se placer dans le repertoire racine du projet
-cd /d "%~dp0\.."
+cd /d "%~dp0\..\.."
 
 set RESULTS_DIR=prompt_optimization_results
 

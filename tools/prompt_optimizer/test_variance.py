@@ -3,7 +3,7 @@ Test de variance: execute le meme prompt sur le meme texte N fois
 pour mesurer la variance naturelle du systeme (Ollama + evaluateur).
 
 Usage:
-    python -m prompt_optimizer.test_variance --config prompt_optimizer_config.yaml --runs 5
+    python -m tools.prompt_optimizer.test_variance --config prompt_optimizer_config.yaml --runs 5
 """
 
 import argparse
@@ -12,9 +12,9 @@ import statistics
 import sys
 from pathlib import Path
 
-from prompt_optimizer.config import load_config
-from prompt_optimizer.llm_adapter import LLMAdapter
-from prompt_optimizer.prompt_template import PromptTemplate
+from tools.prompt_optimizer.config import load_config
+from tools.prompt_optimizer.llm_adapter import LLMAdapter
+from tools.prompt_optimizer.prompt_template import PromptTemplate
 
 
 async def run_variance_test(config_path: str, num_runs: int = 5):

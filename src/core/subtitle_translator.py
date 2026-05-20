@@ -5,7 +5,7 @@ import time
 from typing import List, Dict, Optional
 from tqdm.auto import tqdm
 
-from prompts.prompts import generate_subtitle_block_prompt
+from src.prompts.prompts import generate_subtitle_block_prompt
 from src.config import TRANSLATE_TAG_IN, TRANSLATE_TAG_OUT
 from .llm_client import create_llm_client
 from .post_processor import clean_translated_text
@@ -176,7 +176,7 @@ async def _refine_subtitle_translations(
     Returns:
         Dict mapping subtitle index to refined text
     """
-    from prompts.prompts import generate_post_processing_prompt
+    from src.prompts.prompts import generate_post_processing_prompt
 
     total_subtitles = len(translations)
     refined_translations = {}

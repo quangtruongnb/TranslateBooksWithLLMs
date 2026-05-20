@@ -10,8 +10,8 @@ from src.config import (
     DEFAULT_MODEL, TRANSLATE_TAG_IN, TRANSLATE_TAG_OUT, SENTENCE_TERMINATORS,
     THINKING_MODELS, ADAPTIVE_CONTEXT_INITIAL_THINKING
 )
-from prompts.prompts import generate_translation_prompt, generate_subtitle_block_prompt, generate_refinement_prompt
-from prompts.examples import ensure_example_ready, has_example_for_pair, PLACEHOLDER_EXAMPLES
+from src.prompts.prompts import generate_translation_prompt, generate_subtitle_block_prompt, generate_refinement_prompt
+from src.prompts.examples import ensure_example_ready, has_example_for_pair, PLACEHOLDER_EXAMPLES
 from .llm_client import default_client, LLMClient, create_llm_client, LLMResponse
 from .llm import ContextOverflowError, RepetitionLoopError, RateLimitError
 from .post_processor import clean_translated_text

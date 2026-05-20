@@ -94,7 +94,7 @@ async def suggest_terms(
     Run the NER prompt against `text` (truncated to `max_chars`) using the
     given provider. Returns (candidates, warnings).
     """
-    from prompts.prompts import generate_ner_extraction_prompt
+    from src.prompts.prompts import generate_ner_extraction_prompt
 
     sample = text[:max_chars] if max_chars and len(text) > max_chars else text
     prompt = generate_ner_extraction_prompt(sample, source_language, target_language)

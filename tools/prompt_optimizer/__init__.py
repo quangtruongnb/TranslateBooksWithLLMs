@@ -5,7 +5,7 @@ This module provides tools to automatically optimize translation prompts using
 a genetic algorithm with LLM-based fitness evaluation.
 
 Usage:
-    python -m prompt_optimizer.optimize --config prompt_optimizer_config.yaml
+    python -m tools.prompt_optimizer.optimize --config prompt_optimizer_config.yaml
 
 Modules:
     - config: Configuration loading and validation
@@ -17,34 +17,34 @@ Modules:
     - optimize: Main optimization loop
 """
 
-from prompt_optimizer.config import (
+from tools.prompt_optimizer.config import (
     OptimizerConfig,
     load_config,
     validate_config,
 )
-from prompt_optimizer.prompt_template import (
+from tools.prompt_optimizer.prompt_template import (
     PromptTemplate,
     MutationStrategy,
     EvaluationFeedback,
 )
-from prompt_optimizer.fitness import (
+from tools.prompt_optimizer.fitness import (
     FitnessCalculator,
     FitnessScore,
 )
-from prompt_optimizer.llm_adapter import (
+from tools.prompt_optimizer.llm_adapter import (
     LLMAdapter,
     TranslationResult,
     EvaluationResult,
 )
-from prompt_optimizer.cross_validator import (
+from tools.prompt_optimizer.cross_validator import (
     CrossValidator,
     CrossValidationSplit,
 )
-from prompt_optimizer.history import (
+from tools.prompt_optimizer.history import (
     HistoryManager,
     OptimizationReport,
 )
-from prompt_optimizer.optimize import (
+from tools.prompt_optimizer.optimize import (
     PromptOptimizer,
 )
 

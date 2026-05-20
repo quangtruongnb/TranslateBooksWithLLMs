@@ -202,7 +202,7 @@ docker build -t translatebook .
 docker run -p 5000:5000 -v $(pwd)/translated_files:/app/translated_files translatebook
 ```
 
-See [DOCKER.md](DOCKER.md) for more options.
+See [docs/DOCKER.md](docs/DOCKER.md) for more options.
 
 </details>
 
@@ -218,7 +218,7 @@ See [DOCKER.md](DOCKER.md) for more options.
 | [docs/GLOSSARY.md](docs/GLOSSARY.md) | Force consistent term translations across a book (Web UI + CLI, auto-extract via NER) |
 | [docs/CLI.md](docs/CLI.md) | Complete CLI reference |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Problem solutions |
-| [DOCKER.md](DOCKER.md) | Docker deployment guide |
+| [docs/DOCKER.md](docs/DOCKER.md) | Docker deployment guide |
 
 ---
 

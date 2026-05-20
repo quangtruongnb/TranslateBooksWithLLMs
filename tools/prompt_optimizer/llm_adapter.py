@@ -10,8 +10,8 @@ from typing import Optional, Callable
 
 import httpx
 
-from prompt_optimizer.config import OptimizerConfig
-from prompt_optimizer.logger import get_logger, ConsoleLogger
+from tools.prompt_optimizer.config import OptimizerConfig
+from tools.prompt_optimizer.logger import get_logger, ConsoleLogger
 
 
 @dataclass

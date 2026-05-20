@@ -63,7 +63,7 @@ from src.config import (
     THINKING_MODELS,
     ADAPTIVE_CONTEXT_INITIAL_THINKING,
 )
-from prompts.prompts import generate_placeholder_correction_prompt, CORRECTED_TAG_IN, CORRECTED_TAG_OUT
+from src.prompts.prompts import generate_placeholder_correction_prompt, CORRECTED_TAG_IN, CORRECTED_TAG_OUT
 from src.utils.unified_logger import LogLevel, LogType
 
 
@@ -1140,7 +1140,7 @@ async def _refine_epub_chunks(
     Returns:
         List of refined chunk texts
     """
-    from prompts.prompts import generate_post_processing_prompt
+    from src.prompts.prompts import generate_post_processing_prompt
 
     total_chunks = len(translated_chunks)
     refined_chunks = []

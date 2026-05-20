@@ -188,12 +188,12 @@ def test_import():
 
     try:
         # Clear any cached imports
-        if 'prompts' in sys.modules:
-            del sys.modules['prompts']
-        if 'prompts.prompts' in sys.modules:
-            del sys.modules['prompts.prompts']
+        if 'src.prompts' in sys.modules:
+            del sys.modules['src.prompts']
+        if 'src.prompts.prompts' in sys.modules:
+            del sys.modules['src.prompts.prompts']
 
-        import prompts.prompts
+        import src.prompts.prompts
         print("[OK] prompts.py imports successfully")
         return True
     except SyntaxError as e:

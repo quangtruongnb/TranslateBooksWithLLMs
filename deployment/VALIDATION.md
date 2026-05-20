@@ -6,7 +6,6 @@
 - ✅ `COPY ../requirements.txt .` → `COPY requirements.txt .`
 - ✅ `COPY . .` remplacé par des copies spécifiques:
   - `COPY src/ /app/src/`
-  - `COPY prompts/ /app/prompts/`
   - `COPY translation_api.py /app/`
   - `COPY translate.py /app/`
 - ✅ Version Python mise à jour: `3.9-slim` → `3.11-slim`
@@ -95,8 +94,7 @@ chmod +x test_docker.sh
 
 ### Fichiers qui doivent être copiés dans l'image:
 - ✅ `/app/requirements.txt`
-- ✅ `/app/src/` (tous les modules Python)
-- ✅ `/app/prompts/` (prompts de traduction)
+- ✅ `/app/src/` (tous les modules Python, incluant src/prompts/)
 - ✅ `/app/translation_api.py`
 - ✅ `/app/translate.py`
 
@@ -126,7 +124,7 @@ docker-compose exec translatebook bash
 # Vérifier la structure des fichiers
 docker-compose exec translatebook ls -la /app/
 docker-compose exec translatebook ls -la /app/src/
-docker-compose exec translatebook ls -la /app/prompts/
+docker-compose exec translatebook ls -la /app/src/prompts/
 ```
 
 ## Résolution de problèmes

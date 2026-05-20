@@ -21,7 +21,7 @@ from src.core.context_optimizer import (
 )
 from src.config import MAX_TOKENS_PER_CHUNK, API_ENDPOINT
 from src.core.llm_client import LLMClient
-from prompts.prompts import generate_translation_prompt
+from src.prompts.prompts import generate_translation_prompt
 
 
 async def analyze_token_variations(input_file: str):

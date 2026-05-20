@@ -4,8 +4,8 @@ Main optimization script - entry point for prompt optimization.
 Uses LLM-based intelligent mutation to improve translation prompts.
 
 Usage:
-    python -m prompt_optimizer.optimize --config prompt_optimizer_config.yaml
-    python -m prompt_optimizer.optimize --config config.yaml --iterations 20 --population 10
+    python -m tools.prompt_optimizer.optimize --config prompt_optimizer_config.yaml
+    python -m tools.prompt_optimizer.optimize --config config.yaml --iterations 20 --population 10
 """
 
 import argparse
@@ -15,18 +15,18 @@ import time
 from pathlib import Path
 from typing import Optional, Callable
 
-from prompt_optimizer.config import load_config, validate_config, OptimizerConfig
-from prompt_optimizer.prompt_template import (
+from tools.prompt_optimizer.config import load_config, validate_config, OptimizerConfig
+from tools.prompt_optimizer.prompt_template import (
     PromptTemplate, EvaluationFeedback, MutationStrategy,
     create_initial_population, tournament_selection,
     select_mutation_strategy, get_mutation_prompt,
     prepare_population_for_evolution
 )
-from prompt_optimizer.llm_adapter import LLMAdapter, EvaluationResult
-from prompt_optimizer.fitness import FitnessCalculator, FitnessScore, fitness_summary
-from prompt_optimizer.cross_validator import CrossValidator, CrossValidationSplit, describe_split
-from prompt_optimizer.history import HistoryManager
-from prompt_optimizer.logger import get_logger, log_callback_factory, ConsoleLogger
+from tools.prompt_optimizer.llm_adapter import LLMAdapter, EvaluationResult
+from tools.prompt_optimizer.fitness import FitnessCalculator, FitnessScore, fitness_summary
+from tools.prompt_optimizer.cross_validator import CrossValidator, CrossValidationSplit, describe_split
+from tools.prompt_optimizer.history import HistoryManager
+from tools.prompt_optimizer.logger import get_logger, log_callback_factory, ConsoleLogger
 
 
 class PromptOptimizer:
@@ -468,9 +468,9 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m prompt_optimizer.optimize --config prompt_optimizer_config.yaml
-  python -m prompt_optimizer.optimize --config config.yaml --iterations 20
-  python -m prompt_optimizer.optimize --config config.yaml --population 10 --verbose
+  python -m tools.prompt_optimizer.optimize --config prompt_optimizer_config.yaml
+  python -m tools.prompt_optimizer.optimize --config config.yaml --iterations 20
+  python -m tools.prompt_optimizer.optimize --config config.yaml --population 10 --verbose
         """
     )
 

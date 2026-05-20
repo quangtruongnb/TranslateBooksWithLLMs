@@ -11,8 +11,8 @@ from typing import Optional
 
 import yaml
 
-from prompt_optimizer.prompt_template import PromptTemplate
-from prompt_optimizer.fitness import FitnessScore
+from tools.prompt_optimizer.prompt_template import PromptTemplate
+from tools.prompt_optimizer.fitness import FitnessScore
 
 
 @dataclass

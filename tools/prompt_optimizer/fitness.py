@@ -7,8 +7,8 @@ import statistics
 from dataclasses import dataclass
 from typing import Optional
 
-from prompt_optimizer.config import FitnessConfig
-from prompt_optimizer.llm_adapter import EvaluationResult
+from tools.prompt_optimizer.config import FitnessConfig
+from tools.prompt_optimizer.llm_adapter import EvaluationResult
 
 
 @dataclass

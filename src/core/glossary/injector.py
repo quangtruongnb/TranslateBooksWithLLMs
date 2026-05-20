@@ -1,7 +1,7 @@
 """
 Build the glossary block to inject into the system prompt.
 
-The block style mirrors the existing prompt voice in prompts/prompts.py
+The block style mirrors the existing prompt voice in src/prompts/prompts.py
 (numbered priorities, MANDATORY phrasing) so the LLM treats glossary entries
 with the same weight as the rest of the instructions.
 """

@@ -59,7 +59,7 @@ pip install pyyaml python-dotenv requests
 
 ```bash
 cd c:\Users\bruno\Documents\GitHub\TranslateBookWithLLM
-python -m prompt_optimizer.optimize --config prompt_optimizer/prompt_optimizer_config.yaml --verbose
+python -m tools.prompt_optimizer.optimize --config tools/prompt_optimizer/prompt_optimizer_config.yaml --verbose
 ```
 
 ### Available Options
@@ -100,8 +100,8 @@ The `--verbose` mode enables a detailed colored display showing in real-time:
 ### Example with Options
 
 ```bash
-python -m prompt_optimizer.optimize \
-  --config prompt_optimizer/prompt_optimizer_config.yaml \
+python -m tools.prompt_optimizer.optimize \
+  --config tools/prompt_optimizer/prompt_optimizer_config.yaml \
   --iterations 20 \
   --population 8 \
   --verbose
