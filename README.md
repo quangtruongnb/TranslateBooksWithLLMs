@@ -51,6 +51,8 @@ Providers:
 
 ### Download Executable (No Python Required!)
 
+[Download the latest release](https://github.com/hydropix/TranslateBooksWithLLMs/releases/latest) for your platform.
+
 1. Download and extract the archive for your platform
 2. Install [Ollama](https://ollama.com/) (for local AI models)
 3. Run `TranslateBook.exe` (Windows) or `./TranslateBook` (macOS)
