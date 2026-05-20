@@ -18,7 +18,8 @@ Translate **books**, **subtitles**, and **documents** using AI - locally or in t
 
 Formats: **EPUB**, **SRT**, **DOCX**, **TXT**
 
-<img width="1240" height="1945" alt="image" src="https://github.com/user-attachments/assets/7b9769df-6833-410d-ae38-a5894ca415dd" />
+[<img width="867" height="861" alt="image" src="https://github.com/user-attachments/assets/3efcb2a4-e1f0-4d18-ac90-1068a694a2da">](https://github.com/user-attachments/assets/3efcb2a4-e1f0-4d18-ac90-1068a694a2da)
+
 
 Providers:
 
