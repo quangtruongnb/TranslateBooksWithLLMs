@@ -501,6 +501,37 @@ export const FormManager = {
                     disableAutoPauseCheckbox.checked = config.disable_auto_pause;
                 }
             }
+
+            // Webhook notifications — populate fields from .env
+            if ('notify_webhook_url' in config) {
+                DomHelpers.setValue('notifyWebhookUrl', config.notify_webhook_url || '');
+            }
+            if (config.notify_webhook_method) {
+                DomHelpers.setValue('notifyWebhookMethod', config.notify_webhook_method);
+            }
+            if ('notify_webhook_headers' in config) {
+                DomHelpers.setValue('notifyWebhookHeaders', config.notify_webhook_headers || '');
+            }
+            if ('notify_webhook_payload' in config) {
+                DomHelpers.setValue('notifyWebhookPayload', config.notify_webhook_payload || '');
+            }
+            const setCheckbox = (id, value) => {
+                if (typeof value === 'boolean') {
+                    const cb = DomHelpers.getElement(id);
+                    if (cb) cb.checked = value;
+                }
+            };
+            setCheckbox('notifyOnSuccess', config.notify_on_success);
+            setCheckbox('notifyOnFailure', config.notify_on_failure);
+            setCheckbox('notifyOnInterruption', config.notify_on_interruption);
+            if (typeof config.notify_timeout_seconds === 'number') {
+                DomHelpers.setValue('notifyTimeoutSeconds', String(config.notify_timeout_seconds));
+            }
+            const notifyBadge = DomHelpers.getElement('notifyStatusBadge');
+            if (notifyBadge) {
+                notifyBadge.style.display = config.notify_configured ? 'inline-block' : 'none';
+            }
+
             // Handle API keys - show indicator if configured in .env, otherwise keep placeholder
             ApiKeyUtils.setupField('geminiApiKey', config.gemini_api_key_configured, config.gemini_api_key, config.gemini_api_key_count);
             ApiKeyUtils.setupField('openaiApiKey', config.openai_api_key_configured, config.openai_api_key, config.openai_api_key_count);

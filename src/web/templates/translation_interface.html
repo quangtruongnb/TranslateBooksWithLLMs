@@ -846,6 +846,141 @@
                         </p>
                     </div>
                 </div>
+
+                <!-- Notifications (Collapsible) -->
+                <div class="prompt-options-toggle" onclick="toggleNotificationOptions()">
+                    <span style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span class="material-symbols-outlined">notifications_active</span>
+                        <span>Notifications</span>
+                        <span id="notifyStatusBadge" style="display: none; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: #10b981; color: white;">ON</span>
+                    </span>
+                    <span id="notificationOptionsIcon" class="material-symbols-outlined">expand_more</span>
+                </div>
+
+                <div id="notificationOptionsSection" class="hidden">
+                    <p style="margin: 5px 0 15px 0; font-size: 0.875rem; color: var(--text-muted-light); line-height: 1.5;">
+                        Get pinged on your phone, Discord channel, or any HTTP endpoint when a translation reaches a terminal state.
+                        Useful for long-running jobs with local models. Compatible with <strong>ntfy</strong>, <strong>gotify</strong>, <strong>Discord</strong>, <strong>Slack</strong>, <strong>Healthchecks.io</strong>, or any custom webhook.
+                        See <a href="https://github.com/hydropix/TranslateBooksWithLLMs/blob/main/docs/NOTIFICATIONS.md" target="_blank" rel="noopener" style="color: var(--primary-light);">docs/NOTIFICATIONS.md</a> for the full reference.
+                    </p>
+
+                    <!-- Quick presets -->
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="font-weight: 600; color: var(--text-dark); margin-bottom: 5px; display: block;">Quick presets</label>
+                        <p style="margin: 0 0 8px 0; font-size: 0.8125rem; color: var(--text-muted-light);">
+                            Pick a service to pre-fill URL and payload, then edit the values to match your account.
+                        </p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <button type="button" class="btn btn-secondary" data-notif-preset="ntfy" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">ntfy.sh</button>
+                            <button type="button" class="btn btn-secondary" data-notif-preset="gotify" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">gotify</button>
+                            <button type="button" class="btn btn-secondary" data-notif-preset="discord" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">Discord</button>
+                            <button type="button" class="btn btn-secondary" data-notif-preset="slack" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">Slack</button>
+                            <button type="button" class="btn btn-secondary" data-notif-preset="healthchecks" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">Healthchecks.io</button>
+                            <button type="button" class="btn btn-secondary" data-notif-preset="clear" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">Reset (disable)</button>
+                        </div>
+                    </div>
+
+                    <!-- URL + method row -->
+                    <div style="display: grid; grid-template-columns: 1fr 140px; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Webhook URL</label>
+                            <div class="neu-inset-light">
+                                <input type="text" class="form-control" id="notifyWebhookUrl" placeholder="https://ntfy.sh/your-unique-topic" autocomplete="off">
+                            </div>
+                            <small style="color: var(--text-muted-light); font-size: 0.6875rem; margin-top: 0.4rem; display: block;">
+                                Leave empty to disable notifications entirely. Placeholders supported: <code>{event}</code>, <code>{file}</code>, <code>{translation_id}</code>, ...
+                            </small>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Method</label>
+                            <div class="neu-inset-light">
+                                <select class="form-control" id="notifyWebhookMethod">
+                                    <option value="POST">POST</option>
+                                    <option value="GET">GET</option>
+                                    <option value="PUT">PUT</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Headers -->
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Headers (JSON object, optional)</label>
+                        <div class="neu-inset-light">
+                            <textarea class="form-control" id="notifyWebhookHeaders" rows="2" placeholder='{"Authorization":"Bearer YOUR_TOKEN"}' style="font-family: monospace; font-size: 0.85rem;"></textarea>
+                        </div>
+                        <small style="color: var(--text-muted-light); font-size: 0.6875rem; margin-top: 0.4rem; display: block;">
+                            For services requiring auth (Bearer tokens, API keys). Header values are also templatable.
+                        </small>
+                    </div>
+
+                    <!-- Payload -->
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Payload template (JSON, optional)</label>
+                        <div class="neu-inset-light">
+                            <textarea class="form-control" id="notifyWebhookPayload" rows="3" placeholder='{"title":"Translation {event}","message":"{file} in {duration_seconds:.0f}s"}' style="font-family: monospace; font-size: 0.85rem;"></textarea>
+                        </div>
+                        <small style="color: var(--text-muted-light); font-size: 0.6875rem; margin-top: 0.4rem; display: block;">
+                            Leave empty for the default gotify-compatible payload. String values support placeholders like <code>{event}</code>, <code>{file}</code>, <code>{duration_seconds}</code>, <code>{provider}</code>, <code>{model}</code>, <code>{source_lang}</code>, <code>{target_lang}</code>, <code>{error}</code>.
+                        </small>
+                    </div>
+
+                    <!-- Events row -->
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="font-weight: 600; color: var(--text-dark); margin-bottom: 8px; display: block;">Trigger events</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" id="notifyOnSuccess" checked>
+                                <span><strong>Success</strong> — translation completed</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" id="notifyOnFailure" checked>
+                                <span><strong>Failure</strong> — fatal error</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" id="notifyOnInterruption">
+                                <span><strong>Interruption</strong> — paused / rate-limit</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Timeout -->
+                    <div class="form-group" style="margin-bottom: 15px; max-width: 260px;">
+                        <label>HTTP timeout (seconds)</label>
+                        <div class="neu-inset-light">
+                            <input type="number" class="form-control" id="notifyTimeoutSeconds" min="1" max="120" step="1" value="5">
+                        </div>
+                        <small style="color: var(--text-muted-light); font-size: 0.6875rem; margin-top: 0.4rem; display: block;">
+                            Increase if you see TLS handshake timeouts on slow networks.
+                        </small>
+                    </div>
+
+                    <!-- Save + Test row -->
+                    <div class="form-group" style="margin-bottom: 0; padding-top: 12px; border-top: 1px dashed var(--border-light);">
+                        <label style="font-weight: 600; color: var(--text-dark); margin-bottom: 8px; display: block;">Save and test</label>
+                        <p style="margin: 0 0 10px 0; font-size: 0.8125rem; color: var(--text-muted-light);">
+                            Click <strong>Save</strong> first, then <strong>Send test</strong>. The test uses the configuration currently on disk.
+                        </p>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-primary" onclick="saveSettings()" style="padding: 0.6rem 1.2rem;">
+                                <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle;">save</span>
+                                Save
+                            </button>
+                            <div class="neu-inset-light" style="min-width: 160px;">
+                                <select class="form-control" id="notifyTestEvent">
+                                    <option value="success">success</option>
+                                    <option value="failure">failure</option>
+                                    <option value="interruption">interruption</option>
+                                </select>
+                            </div>
+                            <button type="button" id="notifyTestBtn" class="btn btn-secondary" onclick="testNotification()" style="padding: 0.6rem 1.2rem;">
+                                <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle;">send</span>
+                                Send test
+                            </button>
+                            <span id="notifyTestResult" style="font-size: 0.8125rem; color: var(--text-muted-light);"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         </div><!-- /#tab-settings -->

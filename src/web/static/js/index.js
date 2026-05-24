@@ -20,6 +20,7 @@ import { DomHelpers } from './ui/dom-helpers.js';
 import { MessageLogger } from './ui/message-logger.js';
 import { FormManager } from './ui/form-manager.js';
 import { SettingsSummary } from './ui/settings-summary.js';
+import { NotificationsManager } from './ui/notifications-manager.js';
 import { GlossaryManager } from './glossary/glossary-manager.js';
 
 // ========================================
@@ -396,6 +397,7 @@ async function initializeModules() {
     SettingsManager.initialize();
     FormManager.initialize();
     SettingsSummary.initialize();
+    NotificationsManager.initialize();
     GlossaryManager.initialize();
     StatusManager.initialize();
     initializePreviewHeight();
@@ -452,6 +454,10 @@ window.resetFiles = () => {
 window.toggleSettingsOptions = FormManager.toggleSettingsOptions.bind(FormManager);
 window.togglePromptOptions = FormManager.togglePromptOptions.bind(FormManager);
 window.toggleActivityLog = FormManager.toggleActivityLog.bind(FormManager);
+
+// Notifications Manager
+window.toggleNotificationOptions = NotificationsManager.toggleOptions.bind(NotificationsManager);
+window.testNotification = NotificationsManager.testNotification.bind(NotificationsManager);
 window.checkCustomSourceLanguage = (element) => FormManager.checkCustomSourceLanguage(element);
 window.checkCustomTargetLanguage = (element) => FormManager.checkCustomTargetLanguage(element);
 window.resetForm = FormManager.resetForm.bind(FormManager);

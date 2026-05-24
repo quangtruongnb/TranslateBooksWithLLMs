@@ -168,7 +168,19 @@ def create_config_blueprint(server_session_id=None):
             "poe_api_key_configured": poe_count > 0,
             "nim_api_key_configured": nim_count > 0,
             "output_filename_pattern": _config.OUTPUT_FILENAME_PATTERN,
-            "disable_auto_pause": str(_config.DISABLE_AUTO_PAUSE).strip().lower() == 'true'
+            "disable_auto_pause": str(_config.DISABLE_AUTO_PAUSE).strip().lower() == 'true',
+            # Webhook notifications — returned as-is for editing. URLs and tokens
+            # only ever travel between this server and the same-origin browser
+            # session that already controls the .env on disk.
+            "notify_webhook_url": _config.NOTIFY_WEBHOOK_URL,
+            "notify_webhook_method": _config.NOTIFY_WEBHOOK_METHOD,
+            "notify_webhook_headers": _config.NOTIFY_WEBHOOK_HEADERS,
+            "notify_webhook_payload": _config.NOTIFY_WEBHOOK_PAYLOAD,
+            "notify_on_success": bool(_config.NOTIFY_ON_SUCCESS),
+            "notify_on_failure": bool(_config.NOTIFY_ON_FAILURE),
+            "notify_on_interruption": bool(_config.NOTIFY_ON_INTERRUPTION),
+            "notify_timeout_seconds": int(_config.NOTIFY_TIMEOUT_SECONDS),
+            "notify_configured": bool(_config.NOTIFY_WEBHOOK_URL)
         }
 
         return jsonify(config_response)
@@ -851,6 +863,29 @@ def create_config_blueprint(server_session_id=None):
         config_path = get_config_path()
         return Path(config_path) / '.env'
 
+    # Keys whose values may contain spaces, '#', or JSON braces. python-dotenv
+    # parses unquoted values up to a '#' (treated as inline comment), so a raw
+    # JSON payload like {"text":"hi #1"} would be silently truncated. Wrap in
+    # single quotes (JSON never produces single quotes, so no escape needed).
+    _QUOTED_ENV_KEYS = {
+        'NOTIFY_WEBHOOK_URL',
+        'NOTIFY_WEBHOOK_HEADERS',
+        'NOTIFY_WEBHOOK_PAYLOAD',
+        'OUTPUT_FILENAME_PATTERN',
+    }
+
+    def _format_env_value(key: str, value: str) -> str:
+        if not value:
+            return ''
+        if key not in _QUOTED_ENV_KEYS:
+            return value
+        if "'" not in value:
+            return f"'{value}'"
+        # Fallback if the user did inject single quotes — use double quotes
+        # with the minimal escaping python-dotenv understands.
+        escaped = value.replace('\\', '\\\\').replace('"', '\\"')
+        return f'"{escaped}"'
+
     def _update_env_file(updates: dict) -> bool:
         """
         Update specific keys in the .env file.
@@ -897,8 +932,8 @@ def create_config_blueprint(server_session_id=None):
             if match:
                 key = match.group(1)
                 if key in updates:
-                    # Replace this line with new value
-                    new_lines.append(f"{key}={updates[key]}\n")
+                    formatted = _format_env_value(key, updates[key])
+                    new_lines.append(f"{key}={formatted}\n")
                     updated_keys.add(key)
                 else:
                     new_lines.append(line)
@@ -908,7 +943,8 @@ def create_config_blueprint(server_session_id=None):
         # Add any keys that weren't in the file
         for key, value in updates.items():
             if key not in updated_keys:
-                new_lines.append(f"{key}={value}\n")
+                formatted = _format_env_value(key, value)
+                new_lines.append(f"{key}={formatted}\n")
 
         # Write back
         with open(env_path, 'w', encoding='utf-8') as f:
@@ -943,7 +979,15 @@ def create_config_blueprint(server_session_id=None):
             'OLLAMA_API_ENDPOINT',
             'OPENAI_API_ENDPOINT',
             'OUTPUT_FILENAME_PATTERN',
-            'DISABLE_AUTO_PAUSE'
+            'DISABLE_AUTO_PAUSE',
+            'NOTIFY_WEBHOOK_URL',
+            'NOTIFY_WEBHOOK_METHOD',
+            'NOTIFY_WEBHOOK_HEADERS',
+            'NOTIFY_WEBHOOK_PAYLOAD',
+            'NOTIFY_ON_SUCCESS',
+            'NOTIFY_ON_FAILURE',
+            'NOTIFY_ON_INTERRUPTION',
+            'NOTIFY_TIMEOUT_SECONDS'
         }
 
         try:
@@ -980,6 +1024,72 @@ def create_config_blueprint(server_session_id=None):
         except Exception as e:
             logger.error(f"Error saving settings: {e}")
             return jsonify({"error": f"Failed to save settings: {str(e)}"}), 500
+
+    @bp.route('/api/notifications/test', methods=['POST'])
+    def test_notification():
+        """Send a test webhook using the current saved configuration.
+
+        The notifier reads from src.config (post-reload), so the test always
+        reflects what's actually on disk. Returns success/failure with a hint
+        when the URL is empty or the event flag is off.
+        """
+        from src.utils import notifier
+
+        if not _config.NOTIFY_WEBHOOK_URL:
+            return jsonify({
+                "success": False,
+                "error": "NOTIFY_WEBHOOK_URL is empty. Set a URL and save before testing."
+            }), 400
+
+        data = request.get_json(silent=True) or {}
+        event = data.get('event', notifier.EVENT_SUCCESS)
+        if event not in notifier.known_events():
+            return jsonify({
+                "success": False,
+                "error": f"Unknown event '{event}'. Use one of: {', '.join(notifier.known_events())}"
+            }), 400
+
+        flag_map = {
+            notifier.EVENT_SUCCESS: 'NOTIFY_ON_SUCCESS',
+            notifier.EVENT_FAILURE: 'NOTIFY_ON_FAILURE',
+            notifier.EVENT_INTERRUPTION: 'NOTIFY_ON_INTERRUPTION',
+        }
+        if not bool(getattr(_config, flag_map[event], False)):
+            return jsonify({
+                "success": False,
+                "error": f"Event '{event}' is disabled. Enable it and save before testing."
+            }), 400
+
+        ctx = {
+            "file": "test-file.epub",
+            "output": "test-file (French).epub",
+            "duration_seconds": 12.3,
+            "provider": _config.LLM_PROVIDER,
+            "model": _config.DEFAULT_MODEL or "test-model",
+            "source_lang": "English",
+            "target_lang": "French",
+            "error": "Sample error for failure event" if event == notifier.EVENT_FAILURE else None,
+            "translation_id": "test-job-id",
+        }
+
+        try:
+            sent = notifier.notify(event, ctx)
+        except Exception as exc:
+            logger.exception("Test webhook raised unexpectedly")
+            return jsonify({
+                "success": False,
+                "error": f"Unexpected error: {exc}"
+            }), 500
+
+        if sent:
+            return jsonify({
+                "success": True,
+                "message": f"Test {event} notification sent successfully."
+            })
+        return jsonify({
+            "success": False,
+            "error": "Webhook call failed. Check the server logs (enable DEBUG_MODE for details), the URL, headers and payload format."
+        }), 502
 
     @bp.route('/api/settings', methods=['GET'])
     def get_settings():

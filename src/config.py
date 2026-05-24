@@ -108,13 +108,37 @@ _RELOADABLE_ENV_SETTINGS = (
     ('NIM_MODEL',           'NIM_MODEL',           'meta/llama-3.1-8b-instruct'),
     ('OUTPUT_FILENAME_PATTERN', 'OUTPUT_FILENAME_PATTERN', '{originalName} ({targetLang}).{ext}'),
     ('DISABLE_AUTO_PAUSE',   'DISABLE_AUTO_PAUSE',   'false'),
+    # Webhook notifications — kept here so the web UI can change them at runtime
+    # via /api/settings without a server restart. notifier.py reads these via
+    # `import src.config as cfg; cfg.NOTIFY_*` so reload_config() takes effect.
+    ('NOTIFY_WEBHOOK_URL',     'NOTIFY_WEBHOOK_URL',     ''),
+    ('NOTIFY_WEBHOOK_METHOD',  'NOTIFY_WEBHOOK_METHOD',  'POST'),
+    ('NOTIFY_WEBHOOK_HEADERS', 'NOTIFY_WEBHOOK_HEADERS', ''),
+    ('NOTIFY_WEBHOOK_PAYLOAD', 'NOTIFY_WEBHOOK_PAYLOAD', ''),
+    ('NOTIFY_ON_SUCCESS',      'NOTIFY_ON_SUCCESS',      'true'),
+    ('NOTIFY_ON_FAILURE',      'NOTIFY_ON_FAILURE',      'true'),
+    ('NOTIFY_ON_INTERRUPTION', 'NOTIFY_ON_INTERRUPTION', 'false'),
+    ('NOTIFY_TIMEOUT_SECONDS', 'NOTIFY_TIMEOUT_SECONDS', '5'),
 )
+
+
+_NOTIFY_BOOL_ATTRS = {'NOTIFY_ON_SUCCESS', 'NOTIFY_ON_FAILURE', 'NOTIFY_ON_INTERRUPTION'}
+_NOTIFY_INT_ATTRS = {'NOTIFY_TIMEOUT_SECONDS'}
 
 
 def _apply_reloadable_env_settings():
     g = globals()
     for attr, env_var, default in _RELOADABLE_ENV_SETTINGS:
-        g[attr] = os.getenv(env_var, default)
+        raw = os.getenv(env_var, default)
+        if attr in _NOTIFY_BOOL_ATTRS:
+            g[attr] = str(raw).strip().lower() == 'true'
+        elif attr in _NOTIFY_INT_ATTRS:
+            try:
+                g[attr] = int(raw)
+            except (TypeError, ValueError):
+                g[attr] = int(default)
+        else:
+            g[attr] = raw
     # Legacy alias: API_ENDPOINT falls back to OLLAMA_API_ENDPOINT
     g['API_ENDPOINT'] = os.getenv('API_ENDPOINT', g['OLLAMA_API_ENDPOINT'])
 
@@ -304,16 +328,9 @@ OUTPUT_DIR = str(Path(os.getenv('OUTPUT_DIR', 'translated_files')).expanduser().
 # Healthchecks, custom curl-like endpoint) when a translation reaches a
 # terminal state. Disabled by default; set NOTIFY_WEBHOOK_URL to enable.
 #
-# These values are read at module import and are NOT included in
-# _RELOADABLE_ENV_SETTINGS — restart the app to pick up changes made to .env.
-NOTIFY_WEBHOOK_URL = os.getenv('NOTIFY_WEBHOOK_URL', '')
-NOTIFY_WEBHOOK_METHOD = os.getenv('NOTIFY_WEBHOOK_METHOD', 'POST')
-NOTIFY_WEBHOOK_HEADERS = os.getenv('NOTIFY_WEBHOOK_HEADERS', '')
-NOTIFY_WEBHOOK_PAYLOAD = os.getenv('NOTIFY_WEBHOOK_PAYLOAD', '')
-NOTIFY_ON_SUCCESS = os.getenv('NOTIFY_ON_SUCCESS', 'true').lower() == 'true'
-NOTIFY_ON_FAILURE = os.getenv('NOTIFY_ON_FAILURE', 'true').lower() == 'true'
-NOTIFY_ON_INTERRUPTION = os.getenv('NOTIFY_ON_INTERRUPTION', 'false').lower() == 'true'
-NOTIFY_TIMEOUT_SECONDS = int(os.getenv('NOTIFY_TIMEOUT_SECONDS', '5'))
+# Loaded via _apply_reloadable_env_settings() so the web UI can edit them at
+# runtime via /api/settings (reload_config() refreshes them without restart).
+# notifier.py reads them with `import src.config as cfg; cfg.NOTIFY_*`.
 
 # Debug mode (reload after .env is loaded)
 DEBUG_MODE = os.getenv('DEBUG_MODE', 'false').lower() == 'true'

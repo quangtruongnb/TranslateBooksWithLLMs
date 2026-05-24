@@ -580,6 +580,25 @@ export const SettingsManager = {
             const disableAutoPauseCheckbox = DomHelpers.getElement('disableAutoPause');
             envSettings['DISABLE_AUTO_PAUSE'] = (disableAutoPauseCheckbox && disableAutoPauseCheckbox.checked) ? 'true' : 'false';
 
+            // Webhook notifications — always serialized (even empty) so the user
+            // can disable notifications by clearing the URL and clicking Save.
+            const notifyUrl = DomHelpers.getElement('notifyWebhookUrl');
+            if (notifyUrl) {
+                envSettings['NOTIFY_WEBHOOK_URL'] = notifyUrl.value.trim();
+                envSettings['NOTIFY_WEBHOOK_METHOD'] = DomHelpers.getValue('notifyWebhookMethod') || 'POST';
+                envSettings['NOTIFY_WEBHOOK_HEADERS'] = (DomHelpers.getValue('notifyWebhookHeaders') || '').trim();
+                envSettings['NOTIFY_WEBHOOK_PAYLOAD'] = (DomHelpers.getValue('notifyWebhookPayload') || '').trim();
+                const onSuccess = DomHelpers.getElement('notifyOnSuccess');
+                const onFailure = DomHelpers.getElement('notifyOnFailure');
+                const onInterruption = DomHelpers.getElement('notifyOnInterruption');
+                envSettings['NOTIFY_ON_SUCCESS'] = (onSuccess && onSuccess.checked) ? 'true' : 'false';
+                envSettings['NOTIFY_ON_FAILURE'] = (onFailure && onFailure.checked) ? 'true' : 'false';
+                envSettings['NOTIFY_ON_INTERRUPTION'] = (onInterruption && onInterruption.checked) ? 'true' : 'false';
+                const timeoutRaw = DomHelpers.getValue('notifyTimeoutSeconds');
+                const timeoutNum = parseInt(timeoutRaw, 10);
+                envSettings['NOTIFY_TIMEOUT_SECONDS'] = Number.isFinite(timeoutNum) && timeoutNum > 0 ? String(timeoutNum) : '5';
+            }
+
             // Also save provider and model as defaults
             envSettings['LLM_PROVIDER'] = provider;
             const model = DomHelpers.getValue('model');
