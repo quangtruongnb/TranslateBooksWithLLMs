@@ -30,6 +30,13 @@ export const FileManager = {
             this.refreshFileList();
         });
 
+        // Re-render the list when the UI locale changes: rows are built with
+        // t() at render time, so a full refresh applies the new translations
+        // (including the "Download N" / "Delete N" selection buttons).
+        window.addEventListener('localeChanged', () => {
+            this.refreshFileList();
+        });
+
         // Select all checkbox
         const selectAllCheckbox = DomHelpers.getElement('selectAllFiles');
         if (selectAllCheckbox) {

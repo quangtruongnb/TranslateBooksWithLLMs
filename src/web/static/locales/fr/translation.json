@@ -192,5 +192,15 @@
   "settings_save_failed": "❌ Échec de l'enregistrement : {{error}}",
   "preferences_save_quota": "Stockage du navigateur plein, impossible d'enregistrer les préférences",
   "preferences_save_failed_log": "Échec de l'enregistrement des préférences",
-  "preferences_load_failed_log": "Impossible de charger les préférences enregistrées"
+  "preferences_load_failed_log": "Impossible de charger les préférences enregistrées",
+
+  "summary_refining_in": "Affinage en {{lang}}",
+  "summary_refine_only": "Affinage seul (saute la traduction)",
+  "summary_no_auto_pause": "Pas de pause auto",
+  "summary_bilingual": "Bilingue",
+  "summary_plain_text_mode": "Mode texte brut",
+  "summary_ocr_cleanup": "Nettoyage OCR",
+  "summary_glossary": "Glossaire : {{name}}",
+  "summary_instructions": "Instructions : {{name}}",
+  "summary_lang_auto_detect": "détection auto"
 }

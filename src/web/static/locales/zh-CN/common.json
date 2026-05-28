@@ -28,6 +28,7 @@
   "update_download": "下载更新",
   "update_download_title": "打开 GitHub 发布页面以便您下载新版本。",
   "update_status_failed": "更新失败。",
+  "update_version_available": "v{{latest}} 现已发布（当前 v{{current}}）。",
 
   "refresh": "刷新",
   "cancel": "取消",

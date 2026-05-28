@@ -192,5 +192,15 @@
   "settings_save_failed": "❌ 保存に失敗しました: {{error}}",
   "preferences_save_quota": "ブラウザのストレージが満杯のため、設定を保存できませんでした",
   "preferences_save_failed_log": "設定の保存に失敗しました",
-  "preferences_load_failed_log": "保存された設定を読み込めませんでした"
+  "preferences_load_failed_log": "保存された設定を読み込めませんでした",
+
+  "summary_refining_in": "{{lang}}で洗練中",
+  "summary_refine_only": "洗練のみ（翻訳をスキップ）",
+  "summary_no_auto_pause": "自動一時停止なし",
+  "summary_bilingual": "バイリンガル",
+  "summary_plain_text_mode": "プレーンテキストモード",
+  "summary_ocr_cleanup": "OCR クリーンアップ",
+  "summary_glossary": "用語集：{{name}}",
+  "summary_instructions": "指示：{{name}}",
+  "summary_lang_auto_detect": "自動検出"
 }

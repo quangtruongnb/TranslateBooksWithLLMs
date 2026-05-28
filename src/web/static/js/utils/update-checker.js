@@ -24,6 +24,12 @@ export const UpdateChecker = {
     async initialize() {
         this._wireBannerHandlers();
         this._wireOverlayHandlers();
+        // Re-apply translations to the banner (version sentence + install
+        // button label) when the UI locale changes, by replaying the last
+        // /api/version/check response.
+        window.addEventListener('localeChanged', () => {
+            if (this._lastCheck) this._applyCheckResult(this._lastCheck);
+        });
         try {
             await this.checkOnce();
         } catch (e) {
@@ -96,7 +102,7 @@ export const UpdateChecker = {
         const installBtn = document.getElementById('updateBannerInstallBtn');
 
         if (versionEl) {
-            versionEl.textContent = ` v${data.latest} is available (you have v${data.current}).`;
+            versionEl.textContent = ` ${t('common:update_version_available', { latest: data.latest, current: data.current })}`;
         }
         if (linkEl && data.release_url) {
             linkEl.href = data.release_url;

@@ -192,5 +192,15 @@
   "settings_save_failed": "❌ 저장 실패: {{error}}",
   "preferences_save_quota": "브라우저 저장 공간이 가득 차서 환경 설정을 저장할 수 없습니다",
   "preferences_save_failed_log": "환경 설정 저장 실패",
-  "preferences_load_failed_log": "저장된 환경 설정을 로드할 수 없습니다"
+  "preferences_load_failed_log": "저장된 환경 설정을 로드할 수 없습니다",
+
+  "summary_refining_in": "{{lang}}로 다듬는 중",
+  "summary_refine_only": "다듬기만 (번역 생략)",
+  "summary_no_auto_pause": "자동 일시정지 없음",
+  "summary_bilingual": "이중 언어",
+  "summary_plain_text_mode": "일반 텍스트 모드",
+  "summary_ocr_cleanup": "OCR 정리",
+  "summary_glossary": "용어집: {{name}}",
+  "summary_instructions": "지침: {{name}}",
+  "summary_lang_auto_detect": "자동 감지"
 }

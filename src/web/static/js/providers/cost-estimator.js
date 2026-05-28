@@ -374,6 +374,9 @@ export const CostEstimator = {
         window.addEventListener('modelChanged', scheduleRefresh);
         window.addEventListener('fileListChanged', scheduleRefresh);
         window.addEventListener('translationOptionsChanged', scheduleRefresh);
+        // Rebuild badge innerHTML on language switch: renderBadge re-runs t()
+        // each call, so a plain refresh() (which restores from cache) is enough.
+        window.addEventListener('localeChanged', scheduleRefresh);
 
         ['textCleanup', 'sourceLang', 'targetLang'].forEach((id) => {
             const el = DomHelpers.getElement(id);

@@ -2037,6 +2037,23 @@ export const GlossaryManager = {
         refreshDropdown().catch((err) => {
             console.error('Initial glossary dropdown refresh failed:', err);
         });
+
+        // Re-render dynamic glossary content when the UI locale changes:
+        //  - the Translate-tab dropdown carries t()-built option labels,
+        //  - the list view tbody is JS-rendered (term counts, "—" fallbacks),
+        //  - an open editor has translated category dropdowns per row.
+        // Each helper is a no-op if its container isn't currently mounted.
+        window.addEventListener('localeChanged', () => {
+            refreshDropdown().catch(() => { /* swallow — UI text only */ });
+            const listTable = $('glossaryListTable');
+            if (listTable && !listTable.classList.contains('hidden')) {
+                loadList().catch(() => { /* swallow — UI text only */ });
+            }
+            const editorView = $('glossaryEditorView');
+            if (editorView && !editorView.classList.contains('hidden') && currentGlossaryId) {
+                openEditor(currentGlossaryId).catch(() => { /* swallow */ });
+            }
+        });
     },
     refreshDropdown() {
         return refreshDropdown();

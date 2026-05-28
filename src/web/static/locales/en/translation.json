@@ -192,5 +192,15 @@
   "settings_save_failed": "❌ Failed to save: {{error}}",
   "preferences_save_quota": "Browser storage full, could not save preferences",
   "preferences_save_failed_log": "Failed to save preferences",
-  "preferences_load_failed_log": "Could not load saved preferences"
+  "preferences_load_failed_log": "Could not load saved preferences",
+
+  "summary_refining_in": "Refining in {{lang}}",
+  "summary_refine_only": "Refine Only (skips translation)",
+  "summary_no_auto_pause": "No auto-pause",
+  "summary_bilingual": "Bilingual",
+  "summary_plain_text_mode": "Plain Text Mode",
+  "summary_ocr_cleanup": "OCR cleanup",
+  "summary_glossary": "Glossary: {{name}}",
+  "summary_instructions": "Instructions: {{name}}",
+  "summary_lang_auto_detect": "auto-detect"
 }

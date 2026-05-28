@@ -192,6 +192,17 @@ let ollamaRetryTimer = null;
 let ollamaRetryCount = 0;
 
 /**
+ * Replace the model dropdown content with a single placeholder option whose
+ * text comes from i18n key `i18nKey`. The data-i18n attribute ensures
+ * applyToDOM re-translates it on language switch — so a dropdown stuck in
+ * "Loading...", "Waiting for Ollama", "Enter API key first", etc. follows
+ * the UI locale without requiring us to re-run the original load logic.
+ */
+function setPlaceholderOption(modelSelect, i18nKey) {
+    modelSelect.innerHTML = `<option value="" data-i18n="${i18nKey}">${t(i18nKey)}</option>`;
+}
+
+/**
  * Format price for display (per 1M tokens)
  * @param {number} price - Price per 1M tokens
  * @returns {string} Formatted price string
@@ -657,7 +668,7 @@ export const ProviderManager = {
         const thisRequest = { cancelled: false };
         StateManager.setState('models.currentLoadRequest', thisRequest);
 
-        modelSelect.innerHTML = `<option value="">${t('settings:search_models_loading')}</option>`;
+        setPlaceholderOption(modelSelect, 'settings:search_models_loading');
         StatusManager.setChecking();
 
         try {
@@ -710,7 +721,7 @@ export const ProviderManager = {
                     MessageLogger.addLog(t('settings:waiting_for_ollama_log', { endpoint: apiEndpoint, interval: OLLAMA_RETRY_INTERVAL / 1000 }));
                 }
 
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_waiting_ollama')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_waiting_ollama');
                 StatusManager.setWaiting(t('settings:search_models_waiting_ollama'));
                 this.startOllamaAutoRetry();
             }
@@ -723,7 +734,7 @@ export const ProviderManager = {
                     MessageLogger.addLog(t('settings:ollama_not_accessible_log', { interval: OLLAMA_RETRY_INTERVAL / 1000 }));
                 }
 
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_waiting_ollama')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_waiting_ollama');
                 StatusManager.setDisconnected(t('settings:status_not_accessible'));
                 this.startOllamaAutoRetry();
             }
@@ -776,7 +787,7 @@ export const ProviderManager = {
         const modelSelect = DomHelpers.getElement('model');
         if (!modelSelect) return;
 
-        modelSelect.innerHTML = `<option value="">${t('settings:search_models_loading_gemini')}</option>`;
+        setPlaceholderOption(modelSelect, 'settings:search_models_loading_gemini');
         StatusManager.setChecking();
 
         try {
@@ -807,7 +818,7 @@ export const ProviderManager = {
             } else {
                 const errorMessage = data.error || t('settings:no_models_gemini');
                 MessageLogger.showMessage(t('settings:no_models_warning', { message: errorMessage }), 'error');
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_no_models_available')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_no_models_available');
                 MessageLogger.addLog(t('settings:models_no_gemini_log'));
                 StatusManager.setError(t('settings:status_no_models'));
             }
@@ -815,7 +826,7 @@ export const ProviderManager = {
         } catch (error) {
             MessageLogger.showMessage(t('settings:gemini_fetch_error', { error: error.message }), 'error');
             MessageLogger.addLog(t('settings:gemini_fetch_error_log', { error: error.message }));
-            modelSelect.innerHTML = `<option value="">${t('settings:search_models_error')}</option>`;
+            setPlaceholderOption(modelSelect, 'settings:search_models_error');
             StatusManager.setError(error.message);
         }
     },
@@ -834,7 +845,7 @@ export const ProviderManager = {
         const isOfficialOpenAI = /^https?:\/\/api\.openai\.com(\/|$)/i.test(apiEndpoint);
         const isLocalHttps = /^https:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])/i.test(apiEndpoint);
 
-        modelSelect.innerHTML = `<option value="">${t('settings:search_models_loading')}</option>`;
+        setPlaceholderOption(modelSelect, 'settings:search_models_loading');
         StatusManager.setChecking();
 
         if (isLocalHttps) {
@@ -872,7 +883,7 @@ export const ProviderManager = {
                 const errorMsg = data.error || t('settings:openai_endpoint_error_default');
                 MessageLogger.showMessage(t('settings:openai_endpoint_error_warning', { error: errorMsg }), 'warning');
                 MessageLogger.addLog(t('settings:openai_endpoint_error_log', { error: errorMsg }));
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_no_check_endpoint')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_no_check_endpoint');
                 StateManager.setState('models.availableModels', []);
                 StatusManager.setError(errorMsg);
                 return;
@@ -900,7 +911,7 @@ export const ProviderManager = {
             MessageLogger.addLog(t('settings:openai_connection_error_log', { error: error.message }));
 
             if (!isOfficialOpenAI) {
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_no_check_endpoint')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_no_check_endpoint');
                 StateManager.setState('models.availableModels', []);
                 StatusManager.setError(error.message);
                 return;
@@ -925,7 +936,7 @@ export const ProviderManager = {
         const modelSelect = DomHelpers.getElement('model');
         if (!modelSelect) return;
 
-        modelSelect.innerHTML = `<option value="">${t('settings:search_models_loading_openrouter')}</option>`;
+        setPlaceholderOption(modelSelect, 'settings:search_models_loading_openrouter');
         StatusManager.setChecking();
 
         try {
@@ -988,7 +999,7 @@ export const ProviderManager = {
         const modelSelect = DomHelpers.getElement('model');
         if (!modelSelect) return;
 
-        modelSelect.innerHTML = `<option value="">${t('settings:search_models_loading_mistral')}</option>`;
+        setPlaceholderOption(modelSelect, 'settings:search_models_loading_mistral');
         StatusManager.setChecking();
 
         try {
@@ -996,7 +1007,7 @@ export const ProviderManager = {
             const apiKey = ApiKeyUtils.getValue('mistralApiKey');
             if (!apiKey) {
                 MessageLogger.showMessage(t('settings:mistral_key_required'), 'warning');
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_enter_key_first')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_enter_key_first');
                 StatusManager.setError(t('settings:status_no_api_key'));
                 return;
             }
@@ -1024,12 +1035,12 @@ export const ProviderManager = {
             } else {
                 const errorMessage = data.error || t('settings:mistral_no_models_default');
                 MessageLogger.showMessage(t('settings:no_models_warning', { message: errorMessage }), 'error');
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_no_models_available')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_no_models_available');
                 StatusManager.setError(t('settings:status_no_models'));
             }
         } catch (error) {
             MessageLogger.showMessage(t('settings:mistral_error', { error: error.message }), 'error');
-            modelSelect.innerHTML = `<option value="">${t('settings:search_models_error')}</option>`;
+            setPlaceholderOption(modelSelect, 'settings:search_models_error');
             StatusManager.setError(error.message);
         }
     },
@@ -1041,7 +1052,7 @@ export const ProviderManager = {
         const modelSelect = DomHelpers.getElement('model');
         if (!modelSelect) return;
 
-        modelSelect.innerHTML = `<option value="">${t('settings:search_models_loading_deepseek')}</option>`;
+        setPlaceholderOption(modelSelect, 'settings:search_models_loading_deepseek');
         StatusManager.setChecking();
 
         try {
@@ -1049,7 +1060,7 @@ export const ProviderManager = {
             const apiKey = ApiKeyUtils.getValue('deepseekApiKey');
             if (!apiKey) {
                 MessageLogger.showMessage(t('settings:deepseek_key_required'), 'warning');
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_enter_key_first')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_enter_key_first');
                 StatusManager.setError(t('settings:status_no_api_key'));
                 return;
             }
@@ -1102,14 +1113,14 @@ export const ProviderManager = {
         const modelSelect = DomHelpers.getElement('model');
         if (!modelSelect) return;
 
-        modelSelect.innerHTML = `<option value="">${t('settings:search_models_loading_nim')}</option>`;
+        setPlaceholderOption(modelSelect, 'settings:search_models_loading_nim');
         StatusManager.setChecking();
 
         try {
             const apiKey = ApiKeyUtils.getValue('nimApiKey');
             if (!apiKey) {
                 MessageLogger.showMessage(t('settings:nim_key_required'), 'warning');
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_enter_key_first')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_enter_key_first');
                 StatusManager.setError(t('settings:status_no_api_key'));
                 return;
             }
@@ -1159,7 +1170,7 @@ export const ProviderManager = {
         const modelSelect = DomHelpers.getElement('model');
         if (!modelSelect) return;
 
-        modelSelect.innerHTML = `<option value="">${t('settings:search_models_loading_poe')}</option>`;
+        setPlaceholderOption(modelSelect, 'settings:search_models_loading_poe');
         StatusManager.setChecking();
 
         try {
@@ -1167,7 +1178,7 @@ export const ProviderManager = {
             const apiKey = ApiKeyUtils.getValue('poeApiKey');
             if (!apiKey) {
                 MessageLogger.showMessage(t('settings:poe_key_required'), 'warning');
-                modelSelect.innerHTML = `<option value="">${t('settings:search_models_enter_key_first')}</option>`;
+                setPlaceholderOption(modelSelect, 'settings:search_models_enter_key_first');
                 StatusManager.setError(t('settings:status_no_api_key'));
                 return;
             }

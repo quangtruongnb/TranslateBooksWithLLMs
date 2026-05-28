@@ -28,6 +28,7 @@
   "update_download": "Descargar actualización",
   "update_download_title": "Abre la página de versiones de GitHub para que descargues la nueva compilación.",
   "update_status_failed": "La actualización falló.",
+  "update_version_available": "v{{latest}} está disponible (tienes v{{current}}).",
 
   "refresh": "Actualizar",
   "cancel": "Cancelar",

@@ -352,6 +352,24 @@ function updateFallbackHighlight(count, stats) {
     }
 }
 
+// Re-translate the Fallbacks card tooltip and the open recommendation panel
+// when the UI locale changes. Both pieces are rendered imperatively (no
+// data-i18n marker), so applyToDOM doesn't touch them — without this listener
+// they would stay in the boot locale until the next stats update.
+window.addEventListener('localeChanged', () => {
+    const card = DomHelpers.getElement('fallbackStatCard');
+    if (card) {
+        const isCritical = card.classList.contains('stat-card-critical');
+        card.title = t(isCritical
+            ? 'translation:stat_fallbacks_tooltip_critical'
+            : 'translation:stat_fallbacks_tooltip');
+    }
+    const panel = DomHelpers.getElement('fallbackRecommendationPanel');
+    if (panel && !panel.hasAttribute('hidden') && _lastSeverityContext) {
+        renderRecommendationPanel(_lastSeverityContext);
+    }
+});
+
 /**
  * Update statistics display based on file type
  * All file types (txt, epub, srt) show stats uniformly

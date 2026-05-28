@@ -12,6 +12,7 @@
 
 import { DomHelpers } from './dom-helpers.js';
 import { StateManager } from '../core/state-manager.js';
+import { t } from '../i18n/i18n.js';
 
 const PROVIDER_LABELS = {
     ollama: 'Ollama',
@@ -92,13 +93,13 @@ function buildLlmLine() {
     const providerKey = (DomHelpers.getValue('llmProvider') || '').trim();
     const providerLabel = PROVIDER_LABELS[providerKey] || providerKey || '—';
     const modelLabel = getSelectText('model') || DomHelpers.getValue('model') || '—';
-    const sourceLang = getLanguage('sourceLang', 'customSourceLang') || 'auto-detect';
+    const sourceLang = getLanguage('sourceLang', 'customSourceLang') || t('translation:summary_lang_auto_detect');
     const targetLang = getLanguage('targetLang', 'customTargetLang') || '—';
     if (queueOperation() === 'refine') {
         return [
             { key: 'provider',  label: providerLabel },
             { key: 'model',     label: modelLabel },
-            { key: 'languages', label: `Refining in ${targetLang}` },
+            { key: 'languages', label: t('translation:summary_refining_in', { lang: targetLang }) },
         ];
     }
     return [
@@ -115,33 +116,33 @@ function buildChips() {
     const hasInstructions = !!(DomHelpers.getValue('customInstructionSelect') || '').trim();
 
     if (queueOperation() === 'refine') {
-        chips.push({ key: 'refineOnly', label: 'Refine Only (skips translation)', prominent: true });
+        chips.push({ key: 'refineOnly', label: t('translation:summary_refine_only'), prominent: true });
 
         if (hasGlossary) {
             const name = getSelectText('glossarySelect').split('·')[0].trim();
-            chips.push({ key: 'glossary', label: `Glossary: ${name}` });
+            chips.push({ key: 'glossary', label: t('translation:summary_glossary', { name }) });
         }
         if (hasInstructions) {
-            chips.push({ key: 'instructions', label: `Instructions: ${getSelectText('customInstructionSelect')}` });
+            chips.push({ key: 'instructions', label: t('translation:summary_instructions', { name: getSelectText('customInstructionSelect') }) });
         }
         if (isChecked('disableAutoPause')) {
-            chips.push({ key: 'noPause', label: 'No auto-pause' });
+            chips.push({ key: 'noPause', label: t('translation:summary_no_auto_pause') });
         }
         return chips;
     }
 
-    if (isChecked('bilingualMode'))     chips.push({ key: 'bilingual', label: 'Bilingual' });
-    if (isChecked('plainTextMode'))     chips.push({ key: 'plainText', label: 'Plain Text Mode' });
-    if (isChecked('textCleanup'))       chips.push({ key: 'ocr', label: 'OCR cleanup' });
-    if (isChecked('disableAutoPause'))  chips.push({ key: 'noPause', label: 'No auto-pause' });
+    if (isChecked('bilingualMode'))     chips.push({ key: 'bilingual', label: t('translation:summary_bilingual') });
+    if (isChecked('plainTextMode'))     chips.push({ key: 'plainText', label: t('translation:summary_plain_text_mode') });
+    if (isChecked('textCleanup'))       chips.push({ key: 'ocr', label: t('translation:summary_ocr_cleanup') });
+    if (isChecked('disableAutoPause'))  chips.push({ key: 'noPause', label: t('translation:summary_no_auto_pause') });
 
     if (hasGlossary) {
         const name = getSelectText('glossarySelect').split('·')[0].trim();
-        chips.push({ key: 'glossary', label: `Glossary: ${name}` });
+        chips.push({ key: 'glossary', label: t('translation:summary_glossary', { name }) });
     }
 
     if (hasInstructions) {
-        chips.push({ key: 'instructions', label: `Instructions: ${getSelectText('customInstructionSelect')}` });
+        chips.push({ key: 'instructions', label: t('translation:summary_instructions', { name: getSelectText('customInstructionSelect') }) });
     }
 
     return chips;
@@ -323,6 +324,7 @@ export const SettingsSummary = {
         window.addEventListener('modelChanged', render);
         window.addEventListener('customInstructionsLoaded', render);
         window.addEventListener('fileListChanged', render);
+        window.addEventListener('localeChanged', render);
 
         const container = DomHelpers.getElement('settingsSummary');
         if (container) {

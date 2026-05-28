@@ -192,5 +192,15 @@
   "settings_save_failed": "❌ 保存失败：{{error}}",
   "preferences_save_quota": "浏览器存储已满，无法保存偏好设置",
   "preferences_save_failed_log": "保存偏好设置失败",
-  "preferences_load_failed_log": "无法加载已保存的偏好设置"
+  "preferences_load_failed_log": "无法加载已保存的偏好设置",
+
+  "summary_refining_in": "用{{lang}}润色",
+  "summary_refine_only": "仅润色（跳过翻译）",
+  "summary_no_auto_pause": "不自动暂停",
+  "summary_bilingual": "双语",
+  "summary_plain_text_mode": "纯文本模式",
+  "summary_ocr_cleanup": "OCR 清理",
+  "summary_glossary": "词汇表：{{name}}",
+  "summary_instructions": "指令：{{name}}",
+  "summary_lang_auto_detect": "自动检测"
 }
