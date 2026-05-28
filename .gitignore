@@ -5,7 +5,6 @@ __pycache__/
 /translated_files/
 /data/
 .claude/
-CLAUDE.md
 .env
 .env.*
 !.env.example
