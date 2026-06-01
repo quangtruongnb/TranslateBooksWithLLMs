@@ -7,14 +7,19 @@
 3. calls :meth:`record_unit` once per processed unit,
 4. emits :meth:`snapshot` to whoever reports progress.
 
-All percent computation — including the two-phase segment mapping — lives
-here and nowhere else. The legacy approach (doubling ``total_chunks`` when
-refinement is on, recomputed in five places, plus client-side 0–50/50–100
-remapping) is replaced by a single segment model: translation fills
-``[0, split]`` and refinement fills ``[split, 100]``. Per-phase totals may
-differ (e.g. SRT refines per subtitle but translates per block) — each phase
-is scaled into its own segment independently, so that divergence no longer
-breaks the bar.
+The segment math lives in :func:`global_percent` (shared with the legacy
+bridge): a single model where translation fills ``[0, split]`` and refinement
+fills ``[split, 100]``, replacing the old scattered "double ``total_chunks``
+when refining" trick plus client-side 0–50/50–100 remapping. Per-phase totals
+may differ (e.g. SRT refines per subtitle but translates per block) — each
+phase is scaled into its own segment independently, so that divergence no
+longer breaks the bar.
+
+This tracker is the intended driver for the engines, but it is **not** yet
+wired into the pipeline: production reaches the same math through
+:func:`snapshot_from_legacy_stats`. Today the tracker backs the unit tests and
+documents the target contract; see ``progress/__init__.py`` for the wiring
+status.
 """
 
 from __future__ import annotations

@@ -123,7 +123,6 @@ async def refine_txt_file(
         context_window=context_window,
         auto_adjust_context=auto_adjust_context,
         prompt_options=prompt_options,
-        progress_tracker=None,
     )
 
     from src.config import ATTRIBUTION_ENABLED, GENERATOR_NAME, GENERATOR_SOURCE

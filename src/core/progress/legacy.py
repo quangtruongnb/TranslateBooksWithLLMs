@@ -1,18 +1,23 @@
 """Bridge from the legacy ad-hoc stats dicts to the unified snapshot.
 
-This is the Step 2 seam. Engines still emit their three historical shapes
-(the bare ``{total,completed,failed}`` dict, the rich ``TranslationMetrics``
-dict, and the token-tracker dict), merged with the ``_workflow_meta`` phase
-hints in ``handlers.py``. This function turns that merged dict into a
-:class:`ProgressSnapshot` so a single canonical ``percent`` / ``phase`` can be
-emitted alongside the legacy fields.
+This is the production seam for canonical progress. The format engines emit
+their three historical shapes (the bare ``{total,completed,failed}`` dict, the
+rich ``TranslationMetrics`` dict, and the token-tracker dict); the handler
+(``src/api/handlers.py``) tags each emit with the workflow phase and passes the
+merged dict here. This function turns it into a :class:`ProgressSnapshot` so a
+single canonical ``percent`` / ``phase`` is emitted alongside the legacy fields
+and displayed by the frontend verbatim.
 
-The percent math here mirrors the *frontend's current* bar logic
-(``progress-manager.js`` ``update()``) byte-for-byte, including the
-``progress_percent`` passthrough, so that when the frontend switches to
-reading the server-sent ``percent`` (Step 3) the displayed value does not
-change. Once the engines themselves drive a :class:`ProgressTracker`
-(Steps 5–6), this bridge — and the legacy fields — can be deleted.
+The percent math is intentionally behavior-preserving: it reproduces the
+frontend's historical bar logic byte-for-byte (including the
+``progress_percent`` passthrough for single-phase token-tracked runs), and it
+shares :func:`global_percent` with :class:`ProgressTracker` so the two never
+diverge. Replacing this bridge would mean having the engines drive a
+:class:`ProgressTracker` directly *and* relocating the quality-metrics fields
+(retries, fallbacks, placeholder errors…) that travel in the same stats dict
+and that the frontend consumes — a separate, larger refactor. Until then this
+bridge is the permanent production path; it is locked by the characterization
+goldens in ``tests/characterization/``.
 """
 
 from __future__ import annotations

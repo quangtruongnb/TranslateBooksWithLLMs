@@ -23,8 +23,13 @@ class ProgressStats:
     elapsed_seconds: float
     avg_tokens_per_chunk: float
     current_token_rate: float  # tokens/second
-    current_phase: int = 1  # 1 = translation, 2 = refinement
-    enable_refinement: bool = False  # True when this is a two-phase workflow
+    # Vestigial wire fields: the workflow phase is now owned at the handler
+    # seam (src/api/handlers.py), which overrides these on every emit. The
+    # token tracker itself is single-phase, so it always reports phase 1 /
+    # refinement-disabled; the fields are kept only so the serialized shape
+    # stays stable for the legacy stats bridge and existing consumers.
+    current_phase: int = 1
+    enable_refinement: bool = False
 
     def to_dict(self) -> dict:
         """Convert to dictionary for backwards compatibility with existing code."""
@@ -53,9 +58,10 @@ class TokenProgressTracker:
     - Variable time: proportional to token count
     - Auto-calibrates based on actual performance
 
-    Supports two-phase workflows (translation + refinement):
-    - Phase 1 (translation): 0-50% if refinement enabled, 0-100% otherwise
-    - Phase 2 (refinement): 50-100% when enabled
+    This tracker is single-phase (0-100% over one pass). The two-phase
+    translate→refine workflow is no longer modelled here: the phase boundary
+    and the global 0-50/50-100 mapping are owned by the handler seam and the
+    unified progress contract (src/core/progress), not by this token tracker.
     """
 
     FIXED_PROMPT_OVERHEAD = 3.0  # seconds per chunk
@@ -63,13 +69,8 @@ class TokenProgressTracker:
     CALIBRATION_THRESHOLD = 5    # chunks needed before calibration kicks in
     CALIBRATION_SMOOTHING = 0.3  # weight for new data vs historical
 
-    def __init__(self, enable_refinement: bool = False):
-        """
-        Initialize progress tracker.
-
-        Args:
-            enable_refinement: If True, progress is split 50/50 between translation and refinement
-        """
+    def __init__(self):
+        """Initialize progress tracker."""
         self._total_tokens = 0
         self._completed_tokens = 0
         self._total_chunks = 0
@@ -79,8 +80,6 @@ class TokenProgressTracker:
         self._chunk_times = []   # actual elapsed time per chunk
         self._start_time: Optional[float] = None
         self._token_rate = self.DEFAULT_TOKEN_RATE
-        self._enable_refinement = enable_refinement
-        self._current_phase = 1  # 1 = translation, 2 = refinement
 
     def start(self):
         """Mark the start of translation."""
@@ -130,96 +129,36 @@ class TokenProgressTracker:
         if len(self._chunk_times) >= self.CALIBRATION_THRESHOLD:
             self._calibrate_token_rate()
 
-    def start_refinement_phase(self):
-        """Switch to refinement phase (resets counters for phase 2)."""
-        self._current_phase = 2
-        self._completed_tokens = 0
-        self._completed_chunks = 0
-        self._failed_chunks = 0
-        self._chunk_times = []
-
     def get_progress_percent(self) -> float:
         """
-        Calculate progress as percentage of total work completed.
+        Calculate progress as a percentage of total work completed.
 
-        For two-phase workflows (enable_refinement=True):
-        - Total work = total_tokens * 2 (translation + refinement)
-        - Phase 1 (translation): returns 0-50% based on tokens translated
-        - Phase 2 (refinement): returns 50-100% based on tokens refined
-
-        For single-phase workflows:
-        - Returns 0-100% based on tokens translated
+        Single-phase: returns 0-100% based on tokens completed.
         """
         if self._total_tokens == 0:
             return 0.0
-
-        if not self._enable_refinement:
-            # Single-phase: direct calculation
-            return (self._completed_tokens / self._total_tokens) * 100
-
-        # Two-phase workflow: total work is double (translate + refine)
-        total_work_tokens = self._total_tokens * 2
-
-        if self._current_phase == 1:
-            # Translation phase: 0-50%
-            # completed_tokens out of total_work_tokens (which is double)
-            return (self._completed_tokens / total_work_tokens) * 100
-        else:
-            # Refinement phase: 50-100%
-            # First phase already contributed 50%, now add refinement progress
-            phase1_contribution = 50.0
-            phase2_progress = (self._completed_tokens / self._total_tokens) * 50.0
-            return phase1_contribution + phase2_progress
+        return (self._completed_tokens / self._total_tokens) * 100
 
     def get_estimated_remaining_seconds(self) -> float:
-        """
-        Estimate remaining time based on token count and real performance.
-
-        For two-phase workflows, accounts for remaining work in both phases.
-        """
+        """Estimate remaining time based on token count and real performance."""
         if self._completed_chunks == 0:
             # Initial estimate before any real data
-            total_work_chunks = self._total_chunks * 2 if self._enable_refinement else self._total_chunks
-            total_work_tokens = self._total_tokens * 2 if self._enable_refinement else self._total_tokens
-            return (self.FIXED_PROMPT_OVERHEAD * total_work_chunks) + \
-                   (total_work_tokens * self._token_rate)
+            return (self.FIXED_PROMPT_OVERHEAD * self._total_chunks) + \
+                   (self._total_tokens * self._token_rate)
 
         # Use calibrated rate
-        if not self._enable_refinement:
-            # Single-phase: simple calculation
-            remaining_tokens = self._total_tokens - self._completed_tokens
-            remaining_chunks = self._total_chunks - self._completed_chunks
-            return (self.FIXED_PROMPT_OVERHEAD * remaining_chunks) + \
-                   (remaining_tokens * self._token_rate)
-
-        # Two-phase workflow
-        if self._current_phase == 1:
-            # Still in translation phase - need to account for:
-            # 1. Remaining translation work
-            # 2. All refinement work (entire second phase)
-            remaining_translation_tokens = self._total_tokens - self._completed_tokens
-            remaining_translation_chunks = self._total_chunks - self._completed_chunks
-
-            phase1_remaining = (self.FIXED_PROMPT_OVERHEAD * remaining_translation_chunks) + \
-                              (remaining_translation_tokens * self._token_rate)
-
-            # Phase 2 will process all chunks again
-            phase2_total = (self.FIXED_PROMPT_OVERHEAD * self._total_chunks) + \
-                          (self._total_tokens * self._token_rate)
-
-            return phase1_remaining + phase2_total
-        else:
-            # In refinement phase - only refinement work remains
-            remaining_refinement_tokens = self._total_tokens - self._completed_tokens
-            remaining_refinement_chunks = self._total_chunks - self._completed_chunks
-
-            return (self.FIXED_PROMPT_OVERHEAD * remaining_refinement_chunks) + \
-                   (remaining_refinement_tokens * self._token_rate)
+        remaining_tokens = self._total_tokens - self._completed_tokens
+        remaining_chunks = self._total_chunks - self._completed_chunks
+        return (self.FIXED_PROMPT_OVERHEAD * remaining_chunks) + \
+               (remaining_tokens * self._token_rate)
 
     def get_stats(self) -> ProgressStats:
         """Get immutable snapshot of current progress statistics."""
         elapsed = time() - self._start_time if self._start_time else 0.0
 
+        # current_phase / enable_refinement keep their ProgressStats defaults
+        # (1 / False): this tracker is single-phase and the workflow phase is
+        # owned at the handler seam, which overrides them on emit.
         return ProgressStats(
             total_tokens=self._total_tokens,
             completed_tokens=self._completed_tokens,
@@ -231,8 +170,6 @@ class TokenProgressTracker:
             elapsed_seconds=elapsed,
             avg_tokens_per_chunk=self._total_tokens / self._total_chunks if self._total_chunks > 0 else 0,
             current_token_rate=self._token_rate,
-            current_phase=self._current_phase,
-            enable_refinement=self._enable_refinement
         )
 
     def _calibrate_token_rate(self):

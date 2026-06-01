@@ -11,11 +11,14 @@ This package defines the single source of truth for progress reporting:
   replaces the ad-hoc "double the total when refining" trick scattered across
   the legacy code).
 
-Formats are meant to become simple *unit producers*: they call
-``record_unit()`` once per translated/refined unit and never compute a
-percentage themselves. This module is intentionally not wired into any
-pipeline yet (Step 1 of the progress-system refactor) — it is introduced and
-unit-tested in isolation first.
+In production the percent authority is reached through the
+:func:`snapshot_from_legacy_stats` bridge: the format engines still emit their
+historical stats dicts, and the bridge maps them onto a single canonical
+``percent`` / ``phase`` at the handler seam (``src/api/handlers.py``). The
+:class:`ProgressTracker` driver — formats calling ``record_unit()`` directly,
+with the bridge deleted — is the intended end state but is **not** wired into
+the pipeline; today it backs the unit tests and shares its segment math
+(:func:`global_percent`) with the bridge so both agree by construction.
 """
 
 from .legacy import snapshot_from_legacy_stats

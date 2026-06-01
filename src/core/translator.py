@@ -653,7 +653,6 @@ async def refine_chunks(
     context_window=2048,
     auto_adjust_context=True,
     prompt_options=None,
-    progress_tracker: Optional[TokenProgressTracker] = None
 ) -> List[str]:
     """
     Refine translated chunks with a second pass for literary quality improvement.
@@ -677,7 +676,6 @@ async def refine_chunks(
         context_window: Initial context window size
         auto_adjust_context: Enable adaptive context adjustment
         prompt_options: Optional dict with prompt customization options
-        progress_tracker: Optional TokenProgressTracker for accurate progress tracking
 
     Returns:
         List of refined text strings
@@ -688,18 +686,14 @@ async def refine_chunks(
     # Transient per-job state (e.g. glossary cap warning dedupe) — never persisted.
     runtime_state: dict = {}
 
-    # Switch progress tracker to refinement phase (or create new one if not provided)
-    if progress_tracker is None:
-        # Standalone refinement (no prior translation pass)
-        progress_tracker = TokenProgressTracker(enable_refinement=False)
-        progress_tracker.start()
-        token_counter = TokenChunker(max_tokens=800)
-        for chunk_text in translated_chunks:
-            token_count = token_counter.count_tokens(chunk_text)
-            progress_tracker.register_chunk(token_count)
-    else:
-        # Part of two-phase workflow - switch to refinement phase
-        progress_tracker.start_refinement_phase()
+    # Single-phase refinement tracker (the workflow phase, when this runs as the
+    # second pass of a translate→refine job, is tagged at the handler seam).
+    progress_tracker = TokenProgressTracker()
+    progress_tracker.start()
+    token_counter = TokenChunker(max_tokens=800)
+    for chunk_text in translated_chunks:
+        token_count = token_counter.count_tokens(chunk_text)
+        progress_tracker.register_chunk(token_count)
 
     if log_callback:
         log_callback("refinement_start", f"✨ Starting refinement pass ({total_chunks} chunks)...")
