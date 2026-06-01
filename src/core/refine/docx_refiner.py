@@ -9,15 +9,11 @@ import os
 import tempfile
 from typing import Optional, Callable, Dict
 
-from src.config import (
-    DEFAULT_MODEL, API_ENDPOINT, MAX_TOKENS_PER_CHUNK, THINKING_MODELS,
-    ADAPTIVE_CONTEXT_INITIAL_THINKING,
-)
-from src.core.epub.translator import _create_llm_client, _create_context_manager
+from src.config import DEFAULT_MODEL, API_ENDPOINT, MAX_TOKENS_PER_CHUNK
 from src.core.epub.xhtml_translator import _refine_epub_chunks, _escape_stray_angle_brackets
 from src.core.epub.container import TranslationContainer
 from src.core.docx.converter import DocxHtmlConverter
-from src.core.context_optimizer import INITIAL_CONTEXT_SIZE
+from .client_setup import build_refine_client
 from .epub_refiner import _globalize_chunk_text
 
 
@@ -50,15 +46,12 @@ async def refine_docx_file(
             log_callback("docx_input_file_not_found", err_msg)
         return False
 
-    is_thinking_model = any(tm in model_name.lower() for tm in THINKING_MODELS)
-    if auto_adjust_context:
-        initial_context = ADAPTIVE_CONTEXT_INITIAL_THINKING if is_thinking_model else INITIAL_CONTEXT_SIZE
-    else:
-        initial_context = context_window
-
-    llm_client = _create_llm_client(
-        llm_provider=llm_provider,
+    llm_client, context_manager = build_refine_client(
         model_name=model_name,
+        llm_provider=llm_provider,
+        cli_api_endpoint=cli_api_endpoint,
+        auto_adjust_context=auto_adjust_context,
+        context_window=context_window,
         gemini_api_key=gemini_api_key,
         openai_api_key=openai_api_key,
         openrouter_api_key=openrouter_api_key,
@@ -66,20 +59,10 @@ async def refine_docx_file(
         deepseek_api_key=deepseek_api_key,
         poe_api_key=poe_api_key,
         nim_api_key=nim_api_key,
-        cli_api_endpoint=cli_api_endpoint,
-        initial_context=initial_context,
         log_callback=log_callback,
     )
     if llm_client is None:
         return False
-
-    context_manager = _create_context_manager(
-        llm_provider=llm_provider,
-        auto_adjust_context=auto_adjust_context,
-        initial_context=initial_context,
-        is_thinking_model=is_thinking_model,
-        log_callback=log_callback,
-    )
 
     try:
         if log_callback:

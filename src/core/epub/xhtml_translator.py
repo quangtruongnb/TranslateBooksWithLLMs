@@ -1326,11 +1326,22 @@ async def _refine_epub_chunks(
             refined_chunks.append(translated_text)
             _log_error(log_callback, "epub_refinement_error", f"Chunk {idx + 1}/{total_chunks}: error during refinement: {e}")
 
-        # Update progress after each refinement chunk
-        # Since refinement is Phase 2 of a two-phase workflow, increment refinement counter
-        if stats_callback and stats:
-            stats.refinement_chunks_completed = len(refined_chunks)
-            stats_callback(stats.to_dict())
+        # Update progress after each refinement chunk.
+        if stats_callback:
+            if stats is not None:
+                # In-translation refine (Phase 2 of a two-phase workflow): drive
+                # the shared metrics so its to_dict() reflects refinement progress.
+                stats.refinement_chunks_completed = len(refined_chunks)
+                stats_callback(stats.to_dict())
+            else:
+                # Refine-only callers (e.g. DOCX) pass no metrics object. Emit a
+                # plain per-chunk count so the bar advances instead of sitting at
+                # 0 until completion.
+                stats_callback({
+                    'total_chunks': total_chunks,
+                    'completed_chunks': len(refined_chunks),
+                    'failed_chunks': 0,
+                })
     if log_callback:
         successful_refinements = sum(1 for orig, ref in zip(translated_chunks, refined_chunks) if orig != ref)
         log_callback("epub_refinement_complete",
