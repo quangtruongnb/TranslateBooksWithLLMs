@@ -4,8 +4,10 @@ Translation job management routes
 import os
 import time
 import copy
+from pathlib import Path
 from flask import Blueprint, request, jsonify
 
+from src.api.services.path_validator import PathValidator
 from src.config import (
     REQUEST_TIMEOUT,
     OLLAMA_NUM_CTX,
@@ -113,15 +115,20 @@ def _apply_resume_overrides(config, overrides):
     return None
 
 
-def create_translation_blueprint(state_manager, start_translation_job):
+def create_translation_blueprint(state_manager, start_translation_job, output_dir):
     """
     Create and configure the translation blueprint
 
     Args:
         state_manager: Translation state manager instance
         start_translation_job: Function to start translation jobs
+        output_dir: Base directory for file operations; uploaded source files
+            live in '<output_dir>/uploads' and a client-supplied file_path must
+            resolve inside it.
     """
     bp = Blueprint('translation', __name__)
+
+    uploads_dir = Path(output_dir) / 'uploads'
 
     @bp.route('/api/translate', methods=['POST'])
     def start_translation_request():
@@ -179,7 +186,16 @@ def create_translation_blueprint(state_manager, start_translation_job):
 
         # Add file-specific or text-specific configuration
         if 'file_path' in data:
-            config['file_path'] = data['file_path']
+            # The client supplies this path, so it must be confined to the
+            # uploads directory — otherwise any server-readable file (.env, SSH
+            # keys, /etc/passwd) could be "translated" into a downloadable
+            # output. See issue #209.
+            safe_path, path_error = PathValidator.validate_upload_path(
+                data['file_path'], uploads_dir
+            )
+            if path_error is not None:
+                return jsonify({"error": path_error}), 403
+            config['file_path'] = str(safe_path)
             config['file_type'] = data['file_type']
         else:
             config['text'] = data['text']

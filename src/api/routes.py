@@ -45,7 +45,7 @@ def configure_routes(app, state_manager, output_dir, start_translation_job, sock
     app.register_blueprint(config_bp)
 
     # Register translation management routes
-    translation_bp = create_translation_blueprint(state_manager, start_translation_job)
+    translation_bp = create_translation_blueprint(state_manager, start_translation_job, output_dir)
     app.register_blueprint(translation_bp)
 
     # Register file management routes
@@ -80,7 +80,7 @@ def configure_routes(app, state_manager, output_dir, start_translation_job, sock
     # short-lived and not persisted, so they don't share storage with the
     # main translation state.
     sample_state_manager = SampleStateManager()
-    sample_bp = create_sample_blueprint(sample_state_manager, socketio)
+    sample_bp = create_sample_blueprint(sample_state_manager, socketio, output_dir)
     app.register_blueprint(sample_bp)
 
     # Register error handlers

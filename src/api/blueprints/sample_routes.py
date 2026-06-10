@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from flask import Blueprint, jsonify, request
 
+from src.api.services.path_validator import PathValidator
 from src.config import (
     MAX_TOKENS_PER_CHUNK, OLLAMA_NUM_CTX,
     REQUEST_TIMEOUT, SRT_LINES_PER_BLOCK,
@@ -683,22 +684,38 @@ def _spawn_sample_thread(coro_factory):
     return thread
 
 
-def create_sample_blueprint(sample_state_manager, socketio=None):
+def create_sample_blueprint(sample_state_manager, socketio=None, output_dir="."):
     """Create the sample blueprint.
 
     Args:
         sample_state_manager: Instance of SampleStateManager.
         socketio: SocketIO instance, used to emit `sample_update` events.
+        output_dir: Base directory for file operations; uploaded source files
+            live in '<output_dir>/uploads' and a client-supplied file_path must
+            resolve inside it.
     """
     bp = Blueprint("sample", __name__)
 
+    uploads_dir = Path(output_dir) / "uploads"
+
     def _validate_file(data: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[Tuple[Any, int]]]:
-        """Common file_path + file_type validation. Returns (path, type, err)."""
-        file_path = data.get("file_path")
-        if not file_path:
-            return None, None, (jsonify({"error": "Missing field: file_path"}), 400)
-        if not os.path.exists(file_path):
-            return None, None, (jsonify({"error": f"File not found: {file_path}"}), 404)
+        """Common file_path + file_type validation. Returns (path, type, err).
+
+        The path is confined to the uploads directory: these endpoints return
+        the extracted source text directly in the JSON response, so an
+        unvalidated client path would be a one-step arbitrary-file-read
+        exfiltration primitive. See issue #209.
+        """
+        # validate_upload_path checks containment before existence, so an
+        # out-of-bounds path yields 403 (not 404) and never leaks whether it
+        # exists.
+        safe_path, path_error = PathValidator.validate_upload_path(
+            data.get("file_path"), uploads_dir
+        )
+        if path_error is not None:
+            status = 400 if path_error.startswith("Missing") else 403
+            return None, None, (jsonify({"error": path_error}), status)
+        file_path = str(safe_path)
         try:
             detected = detect_file_type(file_path)
         except Exception as exc:

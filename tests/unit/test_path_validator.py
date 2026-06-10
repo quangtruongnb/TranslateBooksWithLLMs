@@ -271,6 +271,85 @@ class TestPathValidatorEdgeCases:
         assert error == ""
 
 
+class TestValidateUploadPath:
+    """Tests for validate_upload_path / is_within_directory (issue #209)."""
+
+    @pytest.fixture
+    def uploads_dir(self, tmp_path):
+        d = tmp_path / "uploads"
+        d.mkdir()
+        (d / "book.txt").write_text("content", encoding="utf-8")
+        return d
+
+    def test_accepts_absolute_path_inside_uploads(self, uploads_dir):
+        path, error = PathValidator.validate_upload_path(
+            str(uploads_dir / "book.txt"), uploads_dir
+        )
+        assert error is None
+        assert path == (uploads_dir / "book.txt").resolve()
+
+    def test_accepts_relative_path_inside_uploads(self, uploads_dir):
+        path, error = PathValidator.validate_upload_path("book.txt", uploads_dir)
+        assert error is None
+        assert path == (uploads_dir / "book.txt").resolve()
+
+    def test_accepts_path_in_subdirectory(self, uploads_dir):
+        sub = uploads_dir / "job123"
+        sub.mkdir()
+        (sub / "src.txt").write_text("x", encoding="utf-8")
+        path, error = PathValidator.validate_upload_path(str(sub / "src.txt"), uploads_dir)
+        assert error is None
+        assert path == (sub / "src.txt").resolve()
+
+    def test_rejects_absolute_path_outside_uploads(self, uploads_dir, tmp_path):
+        secret = tmp_path / "secret.env"
+        secret.write_text("API_KEY=xxx", encoding="utf-8")
+        path, error = PathValidator.validate_upload_path(str(secret), uploads_dir)
+        assert path is None
+        assert "outside the uploads directory" in error
+
+    def test_rejects_directory_traversal(self, uploads_dir, tmp_path):
+        secret = tmp_path / "secret.env"
+        secret.write_text("API_KEY=xxx", encoding="utf-8")
+        path, error = PathValidator.validate_upload_path("../secret.env", uploads_dir)
+        assert path is None
+        assert "outside the uploads directory" in error
+
+    def test_rejects_sibling_prefix_directory(self, tmp_path):
+        # '/.../uploads-evil' must NOT be considered inside '/.../uploads'
+        # (the bug a string startswith check would have).
+        uploads = tmp_path / "uploads"
+        uploads.mkdir()
+        evil = tmp_path / "uploads-evil"
+        evil.mkdir()
+        target = evil / "f.txt"
+        target.write_text("x", encoding="utf-8")
+        path, error = PathValidator.validate_upload_path(str(target), uploads)
+        assert path is None
+        assert error is not None
+
+    def test_missing_path_returns_error(self, uploads_dir):
+        path, error = PathValidator.validate_upload_path("", uploads_dir)
+        assert path is None
+        assert "Missing" in error
+        path, error = PathValidator.validate_upload_path(None, uploads_dir)
+        assert path is None
+        assert "Missing" in error
+
+    def test_nonexistent_path_inside_uploads_reports_not_found(self, uploads_dir):
+        path, error = PathValidator.validate_upload_path("nope.txt", uploads_dir)
+        assert path is None
+        assert error == "File not found"
+
+    def test_is_within_directory_true_false(self, tmp_path):
+        d = tmp_path / "uploads"
+        d.mkdir()
+        inside = d / "f.txt"
+        inside.write_text("x", encoding="utf-8")
+        assert PathValidator.is_within_directory(inside, d) is True
+        assert PathValidator.is_within_directory(tmp_path / "other.txt", d) is False
+
+
 if __name__ == "__main__":
     # Run tests with pytest
     pytest.main([__file__, "-v"])
