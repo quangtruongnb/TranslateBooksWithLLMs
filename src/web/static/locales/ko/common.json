@@ -51,6 +51,8 @@
   "footer_report_bug_title": "버그 신고하기",
   "footer_suggest_feature": "기능 제안",
   "footer_suggest_feature_title": "기능 제안하기",
+  "footer_kofi": "Ko-fi에서 후원",
+  "footer_kofi_title": "Ko-fi에서 이 프로젝트 후원하기",
 
   "ws_connected_log": "서버와 WebSocket 연결이 설정되었습니다.",
   "ws_disconnected_log": "WebSocket 연결이 끊어졌습니다.",

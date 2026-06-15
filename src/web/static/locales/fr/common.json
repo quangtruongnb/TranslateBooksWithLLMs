@@ -51,6 +51,8 @@
   "footer_report_bug_title": "Signaler un bug",
   "footer_suggest_feature": "Proposer une fonctionnalité",
   "footer_suggest_feature_title": "Proposer une fonctionnalité",
+  "footer_kofi": "Soutenir sur Ko-fi",
+  "footer_kofi_title": "Soutenir ce projet sur Ko-fi",
 
   "ws_connected_log": "Connexion WebSocket au serveur établie.",
   "ws_disconnected_log": "Connexion WebSocket perdue.",

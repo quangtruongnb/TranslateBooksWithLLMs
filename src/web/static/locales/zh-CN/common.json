@@ -51,6 +51,8 @@
   "footer_report_bug_title": "报告一个 Bug",
   "footer_suggest_feature": "建议功能",
   "footer_suggest_feature_title": "建议一项功能",
+  "footer_kofi": "在 Ko-fi 上支持",
+  "footer_kofi_title": "在 Ko-fi 上支持这个项目",
 
   "ws_connected_log": "已建立与服务器的 WebSocket 连接。",
   "ws_disconnected_log": "WebSocket 连接已断开。",

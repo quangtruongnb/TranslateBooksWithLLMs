@@ -51,6 +51,8 @@
   "footer_report_bug_title": "バグを報告する",
   "footer_suggest_feature": "機能を提案",
   "footer_suggest_feature_title": "機能を提案する",
+  "footer_kofi": "Ko-fi で支援",
+  "footer_kofi_title": "Ko-fi でこのプロジェクトを支援する",
 
   "ws_connected_log": "サーバーへの WebSocket 接続が確立されました。",
   "ws_disconnected_log": "WebSocket 接続が切断されました。",

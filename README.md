@@ -238,4 +238,12 @@ See [docs/DOCKER.md](docs/DOCKER.md) for more options.
 
 ---
 
+## Support
+
+If TBL saves you time, you can support its development on Ko-fi:
+
+<a href="https://ko-fi.com/Y1M021FYBG" target="_blank"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi" height="36"></a>
+
+---
+
 **License:** AGPL-3.0
