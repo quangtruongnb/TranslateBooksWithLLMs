@@ -817,6 +817,10 @@
                                     <option value="nim">NVIDIA NIM (Cloud API)</option>
                                 </select>
                             </div>
+                            <button type="button" id="manageCustomProviders" class="btn btn-link" style="margin-top: 4px; padding: 2px 0; font-size: 0.85rem;">
+                                <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">add_circle</span>
+                                <span data-i18n="settings:custom_providers_manage">Manage Custom Providers</span>
+                            </button>
                         </div>
 
                         <!-- Ollama Endpoint -->
@@ -1726,6 +1730,77 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="glossary-preview-cancel" data-i18n="common:close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Provider Management Modal -->
+    <div id="customProviderModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 style="margin: 0;">
+                    <span class="material-symbols-outlined" style="vertical-align: middle;">dns</span>
+                    <span data-i18n="settings:custom_providers_manage">Manage Custom Providers</span>
+                </h3>
+                <button class="close-btn" data-i18n-attr="aria-label:common:close" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- List View -->
+                <div id="customProviderListView">
+                    <p class="custom-provider-intro" data-i18n="settings:custom_provider_intro" style="margin-top: 0; color: var(--text-muted-light); font-size: 0.9rem;">
+                        Add your own OpenAI-compatible endpoints (LM Studio, vLLM, company APIs, etc.)
+                    </p>
+                    <div id="customProviderList" class="custom-provider-list"></div>
+                    <button type="button" id="customProviderAdd" class="btn btn-secondary" style="margin-top: 12px;">
+                        <span class="material-symbols-outlined">add</span>
+                        <span data-i18n="settings:custom_provider_add">Add Provider</span>
+                    </button>
+                </div>
+                <!-- Add/Edit Form -->
+                <div id="customProviderFormView" class="hidden">
+                    <h4 id="customProviderFormTitle" data-i18n="settings:custom_provider_add" style="margin-top: 0;">Add Provider</h4>
+                    <div class="form-group">
+                        <label for="customProviderName" data-i18n="settings:custom_provider_name">Provider Name</label>
+                        <input type="text" id="customProviderName" class="form-control"
+                               data-i18n-attr="placeholder:settings:custom_provider_name_placeholder"
+                               placeholder="e.g., LM Studio" maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="customProviderEndpoint" data-i18n="settings:custom_provider_endpoint">API Endpoint</label>
+                        <input type="url" id="customProviderEndpoint" class="form-control"
+                               data-i18n-attr="placeholder:settings:custom_provider_endpoint_placeholder"
+                               placeholder="http://localhost:1234/v1/chat/completions">
+                    </div>
+                    <div class="form-group">
+                        <label for="customProviderApiKey">
+                            <span data-i18n="settings:custom_provider_api_key">API Key</span>
+                            <span class="optional-label" data-i18n="common:optional">(optional)</span>
+                        </label>
+                        <input type="password" id="customProviderApiKey" class="form-control"
+                               data-i18n-attr="placeholder:settings:custom_provider_api_key_placeholder"
+                               placeholder="Leave empty for local servers">
+                    </div>
+                    <div class="form-group">
+                        <label for="customProviderModel">
+                            <span data-i18n="settings:custom_provider_model">Default Model</span>
+                            <span class="optional-label" data-i18n="common:optional">(optional)</span>
+                        </label>
+                        <input type="text" id="customProviderModel" class="form-control"
+                               data-i18n-attr="placeholder:settings:custom_provider_model_placeholder"
+                               placeholder="Model will be auto-detected if available">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" id="customProviderTest" class="btn btn-secondary">
+                            <span class="material-symbols-outlined">network_check</span>
+                            <span data-i18n="settings:custom_provider_test">Test Connection</span>
+                        </button>
+                        <span id="customProviderTestResult" class="test-result"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="customProviderCancel" class="btn btn-secondary" data-i18n="common:cancel">Cancel</button>
+                <button type="button" id="customProviderSave" class="btn btn-primary" data-i18n="common:save">Save</button>
             </div>
         </div>
     </div>

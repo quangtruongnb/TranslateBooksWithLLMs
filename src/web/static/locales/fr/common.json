@@ -73,5 +73,6 @@
   "notification_test_failed": "Échec du test de notification : {{error}}",
   "notifications_preset_applied": "Préréglage de notifications appliqué : {{name}}",
 
-  "endpoint_reset_log": "Point d'accès réinitialisé à la valeur par défaut du serveur"
+  "endpoint_reset_log": "Point d'accès réinitialisé à la valeur par défaut du serveur",
+  "optional": "(facultatif)"
 }

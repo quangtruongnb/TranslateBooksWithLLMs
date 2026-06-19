@@ -119,6 +119,64 @@ def _apply_reloadable_env_settings():
 
 _apply_reloadable_env_settings()
 
+# =============================================================================
+# CUSTOM OPENAI-COMPATIBLE PROVIDERS
+# =============================================================================
+# Users can define their own OpenAI-compatible providers in .env using:
+#   CUSTOM_PROVIDER__{ID}__NAME=Display Name
+#   CUSTOM_PROVIDER__{ID}__ENDPOINT=http://...
+#   CUSTOM_PROVIDER__{ID}__API_KEY=optional
+#   CUSTOM_PROVIDER__{ID}__MODEL=default-model
+#
+# ID is derived from name: "LM Studio" → "LM_STUDIO"
+
+import re as _re
+from typing import List, Dict
+
+
+def _slugify_provider_name(name: str) -> str:
+    """Convert provider name to env-var-safe ID: 'LM Studio' → 'LM_STUDIO'"""
+    slug = _re.sub(r'[^a-zA-Z0-9]+', '_', name.strip())
+    return slug.strip('_').upper()
+
+
+def _load_custom_providers() -> List[Dict]:
+    """Scan environment for CUSTOM_PROVIDER__{ID}__NAME entries."""
+    providers = []
+
+    for key, value in os.environ.items():
+        if not key.startswith('CUSTOM_PROVIDER__'):
+            continue
+        parts = key.split('__')
+        if len(parts) != 3 or parts[2] != 'NAME':
+            continue
+
+        provider_id = parts[1]
+        prefix = f'CUSTOM_PROVIDER__{provider_id}__'
+
+        providers.append({
+            'id': f'custom_{provider_id.lower()}',
+            'slug': provider_id,
+            'name': value,
+            'endpoint': os.getenv(f'{prefix}ENDPOINT', ''),
+            'api_key': os.getenv(f'{prefix}API_KEY', ''),
+            'model': os.getenv(f'{prefix}MODEL', ''),
+        })
+
+    # Sort alphabetically by name for consistent dropdown order
+    providers.sort(key=lambda p: p['name'].lower())
+    return providers
+
+
+CUSTOM_PROVIDERS: List[Dict] = _load_custom_providers()
+
+
+def reload_custom_providers():
+    """Refresh CUSTOM_PROVIDERS from environment. Called by reload_config()."""
+    global CUSTOM_PROVIDERS
+    CUSTOM_PROVIDERS = _load_custom_providers()
+
+
 PORT = int(os.getenv('PORT', '5000'))
 REQUEST_TIMEOUT = int(os.getenv('REQUEST_TIMEOUT', '300'))
 OLLAMA_NUM_CTX = int(os.getenv('OLLAMA_NUM_CTX', '4096'))
@@ -437,6 +495,7 @@ def reload_config():
     """
     load_dotenv(_env_file, override=True)
     _apply_reloadable_env_settings()
+    reload_custom_providers()
     if _debug_mode or os.getenv('DEBUG_MODE', 'false').lower() == 'true':
         _config_logger.debug("📋 Configuration reloaded from .env")
 

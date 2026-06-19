@@ -47,7 +47,7 @@ def get_config_path():
     return os.getcwd()
 
 import src.config as _config
-from src.config import reload_config
+from src.config import reload_config, _slugify_provider_name
 from src import __version__
 from src.core.llm.base import normalize_api_keys
 from src.api.api_keys import resolve_api_key as _resolve_api_key
@@ -178,6 +178,8 @@ def create_config_blueprint(server_session_id=None):
             else:
                 api_endpoint = request.args.get('api_endpoint', 'https://api.openai.com/v1/chat/completions')
             return _get_openai_models(api_key, api_endpoint)
+        elif provider.startswith('custom_'):
+            return _get_custom_provider_models(provider)
         else:
             return _get_ollama_models()
 
@@ -252,7 +254,19 @@ def create_config_blueprint(server_session_id=None):
             "notify_on_failure": bool(_config.NOTIFY_ON_FAILURE),
             "notify_on_interruption": bool(_config.NOTIFY_ON_INTERRUPTION),
             "notify_timeout_seconds": int(_config.NOTIFY_TIMEOUT_SECONDS),
-            "notify_configured": bool(_config.NOTIFY_WEBHOOK_URL)
+            "notify_configured": bool(_config.NOTIFY_WEBHOOK_URL),
+            # Custom providers - include in config so frontend can populate dropdown
+            "custom_providers": [
+                {
+                    "id": p['id'],
+                    "slug": p['slug'],
+                    "name": p['name'],
+                    "endpoint": p['endpoint'],
+                    "model": p['model'],
+                    "has_api_key": bool(p.get('api_key'))
+                }
+                for p in _config.CUSTOM_PROVIDERS
+            ]
         }
 
         return jsonify(config_response)
@@ -663,6 +677,105 @@ def create_config_blueprint(server_session_id=None):
             model_name_field='name',
             include_model_names_on_error=False,
         )
+
+    def _get_custom_provider_models(provider_id):
+        """Get available models from a custom OpenAI-compatible provider."""
+        # Find provider config
+        custom_cfg = next(
+            (p for p in _config.CUSTOM_PROVIDERS if p['id'] == provider_id),
+            None
+        )
+        if not custom_cfg:
+            return jsonify({
+                "models": [],
+                "model_names": [],
+                "default": None,
+                "status": "custom_error",
+                "count": 0,
+                "error": f"Custom provider not found: {provider_id}"
+            })
+
+        endpoint = custom_cfg['endpoint']
+        api_key = custom_cfg.get('api_key')
+        default_model = custom_cfg.get('model') or None
+
+        # Determine models URL from endpoint
+        base_url = endpoint.replace('/chat/completions', '').rstrip('/')
+        models_url = f"{base_url}/models"
+
+        try:
+            headers = {}
+            if api_key:
+                headers['Authorization'] = f'Bearer {api_key}'
+
+            response = requests.get(models_url, headers=headers, timeout=10)
+
+            if response.status_code == 200:
+                data = response.json()
+                models_data = data.get('data', [])
+
+                if models_data:
+                    models = []
+                    for m in models_data:
+                        model_id = m.get('id', '')
+                        if 'embedding' in model_id.lower() or 'whisper' in model_id.lower():
+                            continue
+                        models.append({
+                            'id': model_id,
+                            'name': model_id,
+                            'owned_by': m.get('owned_by', 'unknown')
+                        })
+
+                    models.sort(key=lambda x: x['name'].lower())
+
+                    if models:
+                        model_ids = [m['id'] for m in models]
+                        resolved_default = default_model
+                        if resolved_default and resolved_default not in model_ids:
+                            resolved_default = model_ids[0]
+                        elif not resolved_default and model_ids:
+                            resolved_default = model_ids[0]
+
+                        return jsonify({
+                            "models": models,
+                            "model_names": model_ids,
+                            "default": resolved_default,
+                            "status": "custom_connected",
+                            "count": len(models)
+                        })
+
+            # Fetch failed - return error with ability to use manual input
+            error_msg = f"HTTP {response.status_code}" if response else "No response"
+            return jsonify({
+                "models": [],
+                "model_names": [],
+                "default": default_model,
+                "status": "custom_error",
+                "count": 0,
+                "error": f"Could not fetch models from {models_url}: {error_msg}",
+                "allow_manual_input": True
+            })
+
+        except requests.exceptions.ConnectionError:
+            return jsonify({
+                "models": [],
+                "model_names": [],
+                "default": default_model,
+                "status": "custom_error",
+                "count": 0,
+                "error": f"Could not connect to {base_url}",
+                "allow_manual_input": True
+            })
+        except Exception as e:
+            return jsonify({
+                "models": [],
+                "model_names": [],
+                "default": default_model,
+                "status": "custom_error",
+                "count": 0,
+                "error": f"Error fetching models: {str(e)}",
+                "allow_manual_input": True
+            })
 
     def _get_ollama_models():
         """Get available models from Ollama API"""
@@ -1077,5 +1190,220 @@ def create_config_blueprint(server_session_id=None):
             "ollama_api_endpoint": _config.OLLAMA_API_ENDPOINT or "",
             "openai_api_endpoint": _config.OPENAI_API_ENDPOINT or ""
         })
+
+    # =========================================================================
+    # CUSTOM OPENAI-COMPATIBLE PROVIDERS
+    # =========================================================================
+
+    @bp.route('/api/custom-providers', methods=['GET'])
+    def get_custom_providers():
+        """List configured custom OpenAI-compatible providers."""
+        providers = []
+        for p in _config.CUSTOM_PROVIDERS:
+            providers.append({
+                "id": p['id'],
+                "slug": p['slug'],
+                "name": p['name'],
+                "endpoint": p['endpoint'],
+                "model": p['model'],
+                "has_api_key": bool(p.get('api_key'))
+            })
+        return jsonify({"providers": providers, "count": len(providers)})
+
+    @bp.route('/api/custom-providers', methods=['POST'])
+    def add_custom_provider():
+        """Add a new custom OpenAI-compatible provider."""
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        name = (data.get('name') or '').strip()
+        endpoint = (data.get('endpoint') or '').strip()
+        api_key = (data.get('api_key') or '').strip()
+        model = (data.get('model') or '').strip()
+
+        # Validation
+        if not name:
+            return jsonify({"error": "Provider name is required"}), 400
+        if len(name) > 50:
+            return jsonify({"error": "Provider name must be 50 characters or less"}), 400
+        if not endpoint:
+            return jsonify({"error": "API endpoint is required"}), 400
+        if not endpoint.startswith(('http://', 'https://')):
+            return jsonify({"error": "Endpoint must start with http:// or https://"}), 400
+
+        # Generate slug and check for duplicates
+        slug = _slugify_provider_name(name)
+        if not slug:
+            return jsonify({"error": "Provider name must contain at least one alphanumeric character"}), 400
+
+        # Check if slug already exists
+        existing = next((p for p in _config.CUSTOM_PROVIDERS if p['slug'] == slug), None)
+        if existing:
+            return jsonify({"error": f"A provider with this name already exists: {existing['name']}"}), 409
+
+        # Build env var updates
+        prefix = f'CUSTOM_PROVIDER__{slug}__'
+        updates = {
+            f'{prefix}NAME': name,
+            f'{prefix}ENDPOINT': endpoint,
+            f'{prefix}API_KEY': api_key,
+            f'{prefix}MODEL': model,
+        }
+
+        try:
+            _update_env_file(updates)
+            reload_config()
+            logger.info(f"Added custom provider: {name} ({slug})")
+
+            return jsonify({
+                "success": True,
+                "id": f"custom_{slug.lower()}",
+                "slug": slug,
+                "message": f"Provider '{name}' added successfully"
+            })
+        except Exception as e:
+            logger.error(f"Error adding custom provider: {e}")
+            return jsonify({"error": f"Failed to save provider: {str(e)}"}), 500
+
+    @bp.route('/api/custom-providers/<slug>', methods=['PUT'])
+    def update_custom_provider(slug):
+        """Update an existing custom provider."""
+        # Find existing provider
+        existing = next((p for p in _config.CUSTOM_PROVIDERS if p['slug'] == slug), None)
+        if not existing:
+            return jsonify({"error": f"Provider not found: {slug}"}), 404
+
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        prefix = f'CUSTOM_PROVIDER__{slug}__'
+        updates = {}
+
+        # Only update fields that are provided
+        if 'name' in data:
+            name = (data['name'] or '').strip()
+            if not name:
+                return jsonify({"error": "Provider name cannot be empty"}), 400
+            if len(name) > 50:
+                return jsonify({"error": "Provider name must be 50 characters or less"}), 400
+            updates[f'{prefix}NAME'] = name
+
+        if 'endpoint' in data:
+            endpoint = (data['endpoint'] or '').strip()
+            if not endpoint:
+                return jsonify({"error": "API endpoint cannot be empty"}), 400
+            if not endpoint.startswith(('http://', 'https://')):
+                return jsonify({"error": "Endpoint must start with http:// or https://"}), 400
+            updates[f'{prefix}ENDPOINT'] = endpoint
+
+        if 'api_key' in data:
+            updates[f'{prefix}API_KEY'] = (data['api_key'] or '').strip()
+
+        if 'model' in data:
+            updates[f'{prefix}MODEL'] = (data['model'] or '').strip()
+
+        if not updates:
+            return jsonify({"error": "No valid fields to update"}), 400
+
+        try:
+            _update_env_file(updates)
+            reload_config()
+            logger.info(f"Updated custom provider: {slug}")
+
+            return jsonify({
+                "success": True,
+                "message": f"Provider updated successfully"
+            })
+        except Exception as e:
+            logger.error(f"Error updating custom provider: {e}")
+            return jsonify({"error": f"Failed to update provider: {str(e)}"}), 500
+
+    @bp.route('/api/custom-providers/<slug>', methods=['DELETE'])
+    def delete_custom_provider(slug):
+        """Delete a custom provider."""
+        # Find existing provider
+        existing = next((p for p in _config.CUSTOM_PROVIDERS if p['slug'] == slug), None)
+        if not existing:
+            return jsonify({"error": f"Provider not found: {slug}"}), 404
+
+        # Remove from .env file
+        env_path = _get_env_file_path()
+        prefix = f'CUSTOM_PROVIDER__{slug}__'
+
+        try:
+            if env_path.exists():
+                with open(env_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+
+                # Filter out lines for this provider
+                new_lines = [line for line in lines if not line.strip().startswith(prefix)]
+
+                with open(env_path, 'w', encoding='utf-8') as f:
+                    f.writelines(new_lines)
+
+            reload_config()
+            logger.info(f"Deleted custom provider: {existing['name']} ({slug})")
+
+            return jsonify({
+                "success": True,
+                "message": f"Provider '{existing['name']}' deleted successfully"
+            })
+        except Exception as e:
+            logger.error(f"Error deleting custom provider: {e}")
+            return jsonify({"error": f"Failed to delete provider: {str(e)}"}), 500
+
+    @bp.route('/api/custom-providers/<slug>/test', methods=['POST'])
+    def test_custom_provider(slug):
+        """Test connection to a custom provider's endpoint."""
+        # Find existing provider
+        existing = next((p for p in _config.CUSTOM_PROVIDERS if p['slug'] == slug), None)
+        if not existing:
+            return jsonify({"error": f"Provider not found: {slug}"}), 404
+
+        endpoint = existing['endpoint']
+        api_key = existing.get('api_key')
+
+        # Determine models URL from endpoint
+        base_url = endpoint.replace('/chat/completions', '').rstrip('/')
+        models_url = f"{base_url}/models"
+
+        try:
+            headers = {}
+            if api_key:
+                headers['Authorization'] = f'Bearer {api_key}'
+
+            response = requests.get(models_url, headers=headers, timeout=5)
+
+            if response.status_code == 200:
+                data = response.json()
+                models_data = data.get('data', [])
+                return jsonify({
+                    "success": True,
+                    "message": "Connected successfully",
+                    "model_count": len(models_data)
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": f"HTTP {response.status_code}: {response.text[:200]}"
+                }), 200  # Return 200 so frontend can display the error
+
+        except requests.exceptions.ConnectionError:
+            return jsonify({
+                "success": False,
+                "error": f"Could not connect to {base_url}"
+            }), 200
+        except requests.exceptions.Timeout:
+            return jsonify({
+                "success": False,
+                "error": "Connection timed out (5s)"
+            }), 200
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 200
 
     return bp

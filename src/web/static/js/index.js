@@ -29,6 +29,7 @@ import { GlossaryManager } from './glossary/glossary-manager.js';
 import { ProviderManager } from './providers/provider-manager.js';
 import { ModelDetector } from './providers/model-detector.js';
 import { CostEstimator } from './providers/cost-estimator.js';
+import { CustomProviderManager } from './providers/custom-provider-manager.js';
 
 // ========================================
 // File Management Modules
@@ -422,6 +423,7 @@ async function initializeModules() {
     StatusManager.initialize();
     initializePreviewHeight();
     ProviderManager.initialize();
+    CustomProviderManager.initialize();
     ModelDetector.initialize();
     // FileUpload must initialize before CostEstimator so its `change` listeners
     // on source/target language fire first and recreate the file <li>s (with

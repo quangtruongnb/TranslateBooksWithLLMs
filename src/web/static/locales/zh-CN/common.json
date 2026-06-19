@@ -73,5 +73,6 @@
   "notification_test_failed": "通知测试失败：{{error}}",
   "notifications_preset_applied": "已应用通知预设：{{name}}",
 
-  "endpoint_reset_log": "端点已重置为服务器默认值"
+  "endpoint_reset_log": "端点已重置为服务器默认值",
+  "optional": "（可选）"
 }

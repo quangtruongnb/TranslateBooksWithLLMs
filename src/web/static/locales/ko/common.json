@@ -73,5 +73,6 @@
   "notification_test_failed": "알림 테스트 실패: {{error}}",
   "notifications_preset_applied": "알림 프리셋 적용됨: {{name}}",
 
-  "endpoint_reset_log": "엔드포인트가 서버 기본값으로 초기화되었습니다"
+  "endpoint_reset_log": "엔드포인트가 서버 기본값으로 초기화되었습니다",
+  "optional": "(선택 사항)"
 }

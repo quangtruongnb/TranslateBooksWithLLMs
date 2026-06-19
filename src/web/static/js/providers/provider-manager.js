@@ -18,10 +18,14 @@ import { t } from '../i18n/i18n.js';
 import {
     PROVIDER_LOGOS,
     PROVIDER_META,
+    CUSTOM_PROVIDERS,
     populateModelSelectInto,
     setPlaceholderOption as setPlaceholderOptionShared,
     renderProviderOption,
     providerDisplayHtml,
+    registerCustomProvider,
+    clearCustomProviders,
+    getCustomProviderIds,
 } from './provider-select-helpers.js';
 
 /**
@@ -257,14 +261,79 @@ export const ProviderManager = {
         const serverConfig = StateManager.getState('ui.defaultConfig');
         if (serverConfig) {
             console.log('[ProviderManager] Config already loaded, loading models immediately');
+            this.loadCustomProviders(serverConfig.custom_providers || []);
             this.toggleProviderSettings(true);
         } else {
             // Listen for server config to be loaded, THEN load models with correct endpoint
             console.log('[ProviderManager] Waiting for defaultConfigLoaded event');
-            window.addEventListener('defaultConfigLoaded', () => {
+            window.addEventListener('defaultConfigLoaded', (e) => {
                 console.log('[ProviderManager] Server config loaded, now loading models with correct endpoint');
+                const config = e.detail || StateManager.getState('ui.defaultConfig') || {};
+                this.loadCustomProviders(config.custom_providers || []);
                 this.toggleProviderSettings(true);
             }, { once: true });
+        }
+
+        // Listen for custom providers being updated (from management modal)
+        window.addEventListener('customProvidersUpdated', (e) => {
+            console.log('[ProviderManager] Custom providers updated, refreshing dropdown');
+            this.loadCustomProviders(e.detail?.providers || []);
+            this.refreshProviderDropdown();
+        });
+    },
+
+    /**
+     * Load custom providers into the metadata registry
+     * @param {Array} providers - Array of custom provider objects from server
+     */
+    loadCustomProviders(providers) {
+        clearCustomProviders();
+        if (!providers || !Array.isArray(providers)) return;
+
+        providers.forEach(p => {
+            registerCustomProvider(p);
+        });
+
+        console.log(`[ProviderManager] Loaded ${providers.length} custom providers`);
+    },
+
+    /**
+     * Refresh the provider dropdown to include/update custom providers
+     */
+    refreshProviderDropdown() {
+        const providerSelect = DomHelpers.getElement('llmProvider');
+        if (!providerSelect) return;
+
+        const currentValue = providerSelect.value;
+
+        // Remove existing custom options
+        Array.from(providerSelect.options).forEach(opt => {
+            if (opt.value.startsWith('custom_')) {
+                opt.remove();
+            }
+        });
+
+        // Add custom providers (sorted alphabetically)
+        const customIds = getCustomProviderIds();
+        customIds.forEach(id => {
+            const meta = PROVIDER_META[id];
+            if (meta) {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = `Custom: ${meta.name}`;
+                providerSelect.appendChild(option);
+            }
+        });
+
+        // Restore selection if it still exists
+        if (currentValue && Array.from(providerSelect.options).some(o => o.value === currentValue)) {
+            providerSelect.value = currentValue;
+        }
+
+        // Refresh searchable select if it exists
+        const instance = SearchableSelectFactory.get('llmProvider');
+        if (instance) {
+            instance.refresh();
         }
     },
 
@@ -436,6 +505,18 @@ export const ProviderManager = {
             if (poeSettings) poeSettings.style.display = 'none';
             if (nimSettings) nimSettings.style.display = 'block';
             if (loadModels) this.loadNimModels();
+        } else if (provider.startsWith('custom_')) {
+            // Custom OpenAI-compatible provider - hide all built-in settings
+            DomHelpers.hide('ollamaSettings');
+            if (geminiSettings) geminiSettings.style.display = 'none';
+            if (openaiApiKeyGroup) openaiApiKeyGroup.style.display = 'none';
+            if (openaiEndpointRow) openaiEndpointRow.style.display = 'none';
+            if (openrouterSettings) openrouterSettings.style.display = 'none';
+            if (mistralSettings) mistralSettings.style.display = 'none';
+            if (deepseekSettings) deepseekSettings.style.display = 'none';
+            if (poeSettings) poeSettings.style.display = 'none';
+            if (nimSettings) nimSettings.style.display = 'none';
+            if (loadModels) this.loadCustomProviderModels(provider);
         }
 
         // Parallel translation is only useful for cloud providers; a single
@@ -466,6 +547,8 @@ export const ProviderManager = {
             this.loadOpenRouterModels();
         } else if (provider === 'mistral') {
             this.loadMistralModels();
+        } else if (provider.startsWith('custom_')) {
+            this.loadCustomProviderModels(provider);
         } else if (provider === 'deepseek') {
             this.loadDeepSeekModels();
         } else if (provider === 'nim') {
@@ -1037,6 +1120,67 @@ export const ProviderManager = {
 
             StateManager.setState('models.availableModels', POE_FALLBACK_MODELS.map(m => m.value));
             StatusManager.setConnected('poe', POE_FALLBACK_MODELS.length);
+        }
+    },
+
+    /**
+     * Load models for a custom OpenAI-compatible provider
+     * @param {string} providerId - Provider ID (e.g., 'custom_lm_studio')
+     */
+    async loadCustomProviderModels(providerId) {
+        const modelSelect = DomHelpers.getElement('model');
+        if (!modelSelect) return;
+
+        // Find provider config
+        const customProvider = CUSTOM_PROVIDERS.find(p => p.id === providerId);
+        const providerName = customProvider?.name || providerId;
+
+        setPlaceholderOption(modelSelect, 'settings:search_models_loading');
+        StatusManager.setChecking();
+
+        try {
+            const data = await ApiClient.getModels(providerId, {});
+
+            if (data.status === 'custom_connected' && data.models && data.models.length > 0) {
+                MessageLogger.showMessage('', '');
+
+                const formattedModels = data.models.map(m => ({
+                    value: m.id,
+                    label: m.name || m.id
+                }));
+
+                populateModelSelect(formattedModels, data.default, 'openai');
+                MessageLogger.addLog(t('settings:custom_provider_models_loaded_log', { name: providerName, count: data.count }));
+
+                SettingsManager.applyPendingModelSelection();
+                ModelDetector.checkAndShowRecommendation();
+
+                StateManager.setState('models.availableModels', formattedModels.map(m => m.value));
+                StatusManager.setConnected(providerName, data.count);
+            } else {
+                // Model fetch failed - allow manual input
+                const errorMsg = data.error || t('settings:custom_provider_models_fetch_failed');
+                MessageLogger.showMessage(t('settings:custom_provider_models_manual_hint', { name: providerName }), 'warning');
+                MessageLogger.addLog(t('settings:custom_provider_models_error_log', { name: providerName, error: errorMsg }));
+
+                // Set up for manual model entry
+                setPlaceholderOption(modelSelect, 'settings:search_models_enter_manually');
+
+                // If provider has a default model, use it
+                if (customProvider?.model) {
+                    const defaultModels = [{ value: customProvider.model, label: customProvider.model }];
+                    populateModelSelect(defaultModels, customProvider.model, 'openai');
+                }
+
+                StateManager.setState('models.availableModels', []);
+                StatusManager.setConnected(providerName, 0);
+            }
+        } catch (error) {
+            MessageLogger.showMessage(t('settings:custom_provider_connection_error', { name: providerName, error: error.message }), 'error');
+            MessageLogger.addLog(t('settings:custom_provider_connection_error_log', { name: providerName, error: error.message }));
+            setPlaceholderOption(modelSelect, 'settings:search_models_enter_manually');
+            StateManager.setState('models.availableModels', []);
+            StatusManager.setError(error.message);
         }
     },
 

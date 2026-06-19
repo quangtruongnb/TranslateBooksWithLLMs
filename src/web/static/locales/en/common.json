@@ -73,5 +73,6 @@
   "notification_test_failed": "Notification test failed: {{error}}",
   "notifications_preset_applied": "Notifications preset applied: {{name}}",
 
-  "endpoint_reset_log": "Endpoint reset to server default"
+  "endpoint_reset_log": "Endpoint reset to server default",
+  "optional": "(optional)"
 }

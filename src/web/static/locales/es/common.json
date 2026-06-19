@@ -73,5 +73,6 @@
   "notification_test_failed": "La prueba de notificación falló: {{error}}",
   "notifications_preset_applied": "Preajuste de notificaciones aplicado: {{name}}",
 
-  "endpoint_reset_log": "Endpoint restablecido al valor por defecto del servidor"
+  "endpoint_reset_log": "Endpoint restablecido al valor por defecto del servidor",
+  "optional": "(opcional)"
 }

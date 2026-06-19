@@ -73,5 +73,6 @@
   "notification_test_failed": "Benachrichtigungstest fehlgeschlagen: {{error}}",
   "notifications_preset_applied": "Benachrichtigungs-Voreinstellung angewendet: {{name}}",
 
-  "endpoint_reset_log": "Endpunkt auf Server-Standard zurückgesetzt"
+  "endpoint_reset_log": "Endpunkt auf Server-Standard zurückgesetzt",
+  "optional": "(optional)"
 }

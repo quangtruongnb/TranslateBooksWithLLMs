@@ -1725,6 +1725,142 @@ input[type="checkbox"] {
     color: var(--text-dark);
 }
 
+/* Custom Provider Modal */
+.custom-provider-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.custom-provider-list .provider-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--background-light);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+}
+
+.custom-provider-list .provider-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.custom-provider-list .provider-name {
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.custom-provider-list .provider-endpoint {
+    font-size: 0.85rem;
+    color: var(--text-muted-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-provider-list .provider-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.custom-provider-list .btn-icon {
+    padding: 6px;
+    min-width: auto;
+    background: transparent;
+    border: none;
+    color: var(--text-muted-light);
+    cursor: pointer;
+}
+
+.custom-provider-list .btn-icon:hover {
+    color: var(--primary-light);
+}
+
+.custom-provider-list .delete-btn:hover {
+    color: var(--danger-light);
+}
+
+.custom-provider-list .empty-state,
+.custom-provider-list .error-state {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted-light);
+}
+
+.custom-provider-list .empty-state .material-symbols-outlined {
+    font-size: 48px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+}
+
+.custom-provider-intro {
+    margin-bottom: 12px;
+}
+
+#customProviderFormView .form-group {
+    margin-bottom: 16px;
+}
+
+#customProviderFormView label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+#customProviderFormView .optional-label {
+    font-weight: normal;
+    color: var(--text-muted-light);
+    font-size: 0.85rem;
+}
+
+#customProviderFormView .form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+.test-result {
+    margin-left: 12px;
+    font-size: 0.9rem;
+}
+
+.test-result.success {
+    color: var(--success-light);
+}
+
+.test-result.error {
+    color: var(--danger-light);
+}
+
+.test-result.warning {
+    color: var(--warning-light);
+}
+
+.btn-link {
+    background: transparent;
+    border: none;
+    color: var(--primary-light);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
 /* ========================================
    Completion Card (shown after each finished translation)
    ======================================== */

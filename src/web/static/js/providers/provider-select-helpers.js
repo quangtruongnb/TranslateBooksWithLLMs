@@ -36,6 +36,50 @@ export const PROVIDER_META = {
 // Canonical A-Z order used everywhere a provider dropdown is built.
 export const PROVIDER_ORDER = ['deepseek', 'gemini', 'mistral', 'nim', 'ollama', 'openai', 'openrouter', 'poe'];
 
+// Custom providers loaded from server (populated by CustomProviderManager)
+export const CUSTOM_PROVIDERS = [];
+
+/**
+ * Register a custom provider in the metadata lookups.
+ * Called when custom providers are loaded from the server.
+ */
+export function registerCustomProvider(provider) {
+    const id = provider.id;
+    if (!PROVIDER_META[id]) {
+        PROVIDER_META[id] = {
+            name: provider.name,
+            description: 'Custom'
+        };
+    }
+    const existing = CUSTOM_PROVIDERS.find(p => p.id === id);
+    if (!existing) {
+        CUSTOM_PROVIDERS.push(provider);
+    }
+}
+
+/**
+ * Clear all registered custom providers.
+ * Called before reloading the list from server.
+ */
+export function clearCustomProviders() {
+    CUSTOM_PROVIDERS.length = 0;
+    Object.keys(PROVIDER_META).forEach(key => {
+        if (key.startsWith('custom_')) {
+            delete PROVIDER_META[key];
+        }
+    });
+}
+
+/**
+ * Get a sorted list of custom provider IDs for dropdown ordering.
+ */
+export function getCustomProviderIds() {
+    return CUSTOM_PROVIDERS
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(p => p.id);
+}
+
 /**
  * Replace the dropdown content with a single placeholder option whose text
  * comes from an i18n key. The data-i18n attribute keeps the placeholder in
@@ -172,13 +216,20 @@ export function populateModelSelectInto(selectEl, models, defaultModel = null, p
 export function renderProviderOption(opt) {
     const logo = PROVIDER_LOGOS[opt.value] || '';
     const meta = PROVIDER_META[opt.value] || { name: opt.label, description: '' };
+    const isCustom = opt.value.startsWith('custom_');
     const checkmark = opt.selected
         ? '<span class="option-check material-symbols-outlined">check</span>'
         : '<span class="option-check"></span>';
+
+    // Custom providers use a generic icon instead of a logo
+    const logoHtml = isCustom
+        ? '<span class="provider-logo material-symbols-outlined" style="font-size: 20px; color: var(--text-secondary);">dns</span>'
+        : `<img src="${logo}" alt="" class="provider-logo" onerror="this.style.display='none'">`;
+
     return `
         ${checkmark}
         <span class="provider-option">
-            <img src="${logo}" alt="" class="provider-logo" onerror="this.style.display='none'">
+            ${logoHtml}
             <span class="provider-name">${DomHelpers.escapeHtml(meta.name)}</span>
             <span class="provider-description">${DomHelpers.escapeHtml(meta.description)}</span>
         </span>
@@ -191,9 +242,15 @@ export function renderProviderOption(opt) {
 export function providerDisplayHtml(providerValue) {
     const logo = PROVIDER_LOGOS[providerValue] || '';
     const meta = PROVIDER_META[providerValue] || { name: providerValue, description: '' };
+    const isCustom = providerValue.startsWith('custom_');
+
+    const logoHtml = isCustom
+        ? '<span class="provider-logo material-symbols-outlined" style="font-size: 20px; color: var(--text-secondary);">dns</span>'
+        : `<img src="${logo}" alt="" class="provider-logo" onerror="this.style.display='none'">`;
+
     return `
         <span class="provider-option">
-            <img src="${logo}" alt="" class="provider-logo" onerror="this.style.display='none'">
+            ${logoHtml}
             <span class="provider-name">${DomHelpers.escapeHtml(meta.name)}</span>
         </span>
     `;

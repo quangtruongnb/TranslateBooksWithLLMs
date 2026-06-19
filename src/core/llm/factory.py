@@ -16,7 +16,8 @@ from src.config import (
     DEEPSEEK_DISABLE_THINKING,
     POE_API_KEY, POE_MODEL, POE_API_ENDPOINT,
     NIM_API_KEY, NIM_MODEL, NIM_API_ENDPOINT,
-    LITELLM_MODEL
+    LITELLM_MODEL,
+    CUSTOM_PROVIDERS,
 )
 from .base import LLMProvider, normalize_api_keys
 from .providers.ollama import OllamaProvider
@@ -181,5 +182,22 @@ def create_llm_provider(provider_type: str = "ollama", **kwargs) -> LLMProvider:
             api_base=kwargs.get("litellm_api_base"),
         )
 
-    else:
-        raise ValueError(f"Unknown provider type: {provider_type}")
+    # Handle user-defined custom OpenAI-compatible providers (custom_*)
+    if provider_type.lower().startswith('custom_'):
+        # Import fresh to get latest CUSTOM_PROVIDERS after any reload
+        import src.config as cfg
+        custom_cfg = next(
+            (p for p in cfg.CUSTOM_PROVIDERS if p['id'] == provider_type.lower()),
+            None
+        )
+        if not custom_cfg:
+            raise ValueError(f"Unknown custom provider: {provider_type}")
+
+        return OpenAICompatibleProvider(
+            api_endpoint=kwargs.get('api_endpoint') or custom_cfg['endpoint'],
+            model=kwargs.get('model') or custom_cfg['model'] or DEFAULT_MODEL,
+            api_key=kwargs.get('api_key') or custom_cfg['api_key'] or None,
+            provider_name=custom_cfg['name'],
+        )
+
+    raise ValueError(f"Unknown provider type: {provider_type}")

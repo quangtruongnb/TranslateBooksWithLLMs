@@ -88,6 +88,54 @@ export const ApiClient = {
     },
 
     // ========================================
+    // Generic HTTP Methods
+    // ========================================
+
+    /**
+     * Make a GET request
+     * @param {string} endpoint - API endpoint
+     * @returns {Promise<Object>} Response data
+     */
+    async get(endpoint) {
+        return await apiRequest(endpoint, { method: 'GET' });
+    },
+
+    /**
+     * Make a POST request
+     * @param {string} endpoint - API endpoint
+     * @param {Object} data - Request body
+     * @returns {Promise<Object>} Response data
+     */
+    async post(endpoint, data) {
+        return await apiRequest(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    /**
+     * Make a PUT request
+     * @param {string} endpoint - API endpoint
+     * @param {Object} data - Request body
+     * @returns {Promise<Object>} Response data
+     */
+    async put(endpoint, data) {
+        return await apiRequest(endpoint, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    },
+
+    /**
+     * Make a DELETE request
+     * @param {string} endpoint - API endpoint
+     * @returns {Promise<Object>} Response data
+     */
+    async delete(endpoint) {
+        return await apiRequest(endpoint, { method: 'DELETE' });
+    },
+
+    // ========================================
     // Health & Configuration
     // ========================================
 
