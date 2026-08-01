@@ -73,7 +73,7 @@ class Glossary:
 @dataclass
 class GlossaryConfig:
     """Behavior knobs for the per-chunk glossary filter."""
-    max_entries: int = 50
+    max_entries: int = 100
     case_sensitive: bool = True
     warn_on_cap: bool = True
 
