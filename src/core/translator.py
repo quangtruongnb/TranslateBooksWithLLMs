@@ -185,6 +185,8 @@ async def _make_llm_request_with_adaptive_context(
     all_translations = []
     reduction_attempt = 0
     last_response: Optional[LLMResponse] = None
+    format_retry_count = 0
+    MAX_FORMAT_RETRIES = 3
 
     while current_content.strip():
         try:
@@ -301,6 +303,16 @@ async def _make_llm_request_with_adaptive_context(
                                 "🔄 Model stopped before closing tag. Retrying with larger context...")
                         context_manager.increase_context()
                         continue  # Retry with larger context
+
+                # Format retry: tags completely absent (LLM ignored output format instruction).
+                # Resend the same request — no context change needed.
+                if format_retry_count < MAX_FORMAT_RETRIES:
+                    format_retry_count += 1
+                    if log_callback:
+                        log_callback("format_retry",
+                            f"🔄 Translation tags not found. Retrying request "
+                            f"({format_retry_count}/{MAX_FORMAT_RETRIES})...")
+                    continue
 
                 # For EPUB with placeholders, failing to extract is CRITICAL
                 # because using the raw response would include <TRANSLATION> tags in the HTML
