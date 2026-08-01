@@ -47,14 +47,22 @@ class DeepSeekProvider(LLMProvider):
     API_URL = "https://api.deepseek.com/chat/completions"
     MODELS_URL = "https://api.deepseek.com/models"
 
-    MODEL_CONTEXT_SIZES = {
-        "deepseek-v4-pro": 64000,
-        "deepseek-v4-flash": 64000,
-        "deepseek-chat": 64000,
-        "deepseek-reasoner": 64000,
-        "deepseek-coder": 16000,
-        "deepseek-v4": 64000,
+    # (context_window, max_output_tokens)
+    # Source: https://api-docs.deepseek.com/quick_start/pricing (2026)
+    # DeepSeek V4 Flash/Pro: 64K context, 16K max output (API default is 8192 — must be set explicitly)
+    # DeepSeek Reasoner: 64K context, 32K output budget (thinking tokens count toward this)
+    MODEL_SPECS: dict = {
+        "deepseek-v4-pro":    {"context": 64000, "max_output": 16384},
+        "deepseek-v4-flash":  {"context": 64000, "max_output": 16384},
+        "deepseek-v4":        {"context": 64000, "max_output": 16384},
+        "deepseek-chat":      {"context": 64000, "max_output": 8192},   # V3 legacy
+        "deepseek-reasoner":  {"context": 64000, "max_output": 32768},  # R1 thinking
+        "deepseek-r1":        {"context": 64000, "max_output": 32768},
+        "deepseek-coder":     {"context": 16000, "max_output": 4096},
     }
+
+    # Kept for backward-compat with _get_context_limit()
+    MODEL_CONTEXT_SIZES: dict = {k: v["context"] for k, v in MODEL_SPECS.items()}
 
     FALLBACK_MODELS = [
         "deepseek-v4-pro",
@@ -86,17 +94,25 @@ class DeepSeekProvider(LLMProvider):
         self.disable_thinking = disable_thinking
 
     def _get_context_limit(self) -> int:
-        """
-        Determine context limit based on model name.
+        """Return input context window size for the current model."""
+        model_lower = self.model.lower()
+        for prefix, spec in self.MODEL_SPECS.items():
+            if prefix in model_lower:
+                return spec["context"]
+        return 64000  # Default for DeepSeek
 
-        Returns:
-            Context limit in tokens
+    def _get_max_output_tokens(self) -> int:
+        """Return the maximum output tokens for the current model.
+
+        DeepSeek's API defaults to 8192 when max_tokens is omitted.
+        Setting this explicitly allows V4 Flash/Pro to use up to 16384 tokens
+        and Reasoner to use up to 32768, preventing mid-translation cutoff.
         """
         model_lower = self.model.lower()
-        for prefix, limit in self.MODEL_CONTEXT_SIZES.items():
+        for prefix, spec in self.MODEL_SPECS.items():
             if prefix in model_lower:
-                return limit
-        return 64000  # Default for DeepSeek
+                return spec["max_output"]
+        return 8192  # Safe fallback (DeepSeek API default)
 
     def _is_thinking_model(self) -> bool:
         """Check if the current model uses thinking mode."""
@@ -211,11 +227,13 @@ class DeepSeekProvider(LLMProvider):
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
+        max_output = self._get_max_output_tokens()
         payload = {
             "model": self.model,
             "messages": messages,
             "temperature": TEMPERATURE,
-            "stream": False
+            "stream": False,
+            "max_tokens": max_output,
         }
 
         if self._thinking_enabled_by_default() and self.disable_thinking:
